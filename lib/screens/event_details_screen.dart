@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../data/reviews.dart';
-import '../data/saved_events.dart';
+import '../data/user_mode.dart';
 import '../models/event.dart';
 import '../models/review.dart';
+import '../services/event_service.dart';
+import '../services/review_service.dart';
+import '../services/saved_event_service.dart';
 
 class EventDetailsScreen extends StatefulWidget {
   final Event event;
@@ -19,51 +21,96 @@ class EventDetailsScreen extends StatefulWidget {
 }
 
 class _EventDetailsScreenState extends State<EventDetailsScreen> {
-  bool get isSaved {
-    return savedEvents.any(
-      (savedEvent) => savedEvent.id == widget.event.id,
-    );
+  late Future<List<Review>> reviewsFuture;
+  bool isEventSaved = false;
+
+  bool get isSaved => isEventSaved;
+
+  @override
+  void initState() {
+    super.initState();
+    reviewsFuture = ReviewService.fetchReviews(widget.event.id);
   }
 
-  List<Review> get eventReviews {
-    return reviews
-        .where((review) => review.eventId == widget.event.id)
-        .toList();
+  void refreshReviews() {
+    setState(() {
+      reviewsFuture = ReviewService.fetchReviews(widget.event.id);
+    });
   }
 
-  double get averageRating {
-    if (eventReviews.isEmpty) {
+  double calculateAverageRating(List<Review> reviews) {
+    if (reviews.isEmpty) {
       return 0;
     }
 
-    final int total = eventReviews.fold<int>(
+    final int total = reviews.fold<int>(
       0,
       (sum, review) => sum + review.rating,
     );
 
-    return total / eventReviews.length;
+    return total / reviews.length;
   }
 
-  void toggleSave() {
+  Future<void> toggleSave() async {
     final bool wasSaved = isSaved;
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
 
-    setState(() {
+    try {
       if (wasSaved) {
-        savedEvents.removeWhere(
-          (savedEvent) => savedEvent.id == widget.event.id,
-        );
+        await SavedEventService.removeSavedEvent(widget.event.id);
       } else {
-        savedEvents.add(widget.event);
+        await SavedEventService.saveEvent(widget.event.id);
       }
-    });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          wasSaved ? 'Event removed from saved' : 'Event saved',
+      if (!mounted) return;
+
+      setState(() {
+        isEventSaved = !wasSaved;
+      });
+
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            wasSaved ? 'Event removed from saved' : 'Event saved',
+          ),
         ),
-      ),
-    );
+      );
+    } catch (error) {
+      if (!mounted) return;
+
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Could not update saved event: $error'),
+        ),
+      );
+    }
+  }
+
+  Future<void> deleteEvent() async {
+    final NavigatorState navigator = Navigator.of(context);
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+
+    try {
+      await EventService.deleteEvent(widget.event.id);
+
+      if (!mounted) return;
+
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Event deleted'),
+        ),
+      );
+
+      navigator.pop();
+    } catch (error) {
+      if (!mounted) return;
+
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Could not delete event: $error'),
+        ),
+      );
+    }
   }
 
   void shareEvent() {
@@ -146,29 +193,50 @@ ${event.description}
                   child: const Text('Cancel'),
                 ),
                 ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     final String comment = reviewController.text.trim();
 
-                    setState(() {
-                      reviews.add(
-                        Review(
-                          eventId: widget.event.id,
-                          rating: selectedRating,
-                          comment: comment.isEmpty
-                              ? 'No written review'
-                              : comment,
+                    final Review newReview = Review(
+                      id: '',
+                      eventId: widget.event.id,
+                      rating: selectedRating,
+                      comment: comment.isEmpty
+                          ? 'No written review'
+                          : comment,
+                    );
+
+                    final NavigatorState navigator =
+                        Navigator.of(dialogContext);
+                    final ScaffoldMessengerState messenger =
+                        ScaffoldMessenger.of(context);
+
+                    try {
+                      await ReviewService.createReview(
+                        eventId: widget.event.id,
+                        review: newReview,
+                      );
+
+                      if (!context.mounted) return;
+
+                      reviewController.dispose();
+                      navigator.pop();
+
+                      messenger.showSnackBar(
+                        const SnackBar(
+                          content: Text('Rating submitted'),
                         ),
                       );
-                    });
 
-                    reviewController.dispose();
-                    Navigator.pop(dialogContext);
+                      refreshReviews();
+                    } catch (error) {
+                      if (!context.mounted) return;
 
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Rating submitted'),
-                      ),
-                    );
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Text('Could not submit rating: $error'),
+                        ),
+                      );
+                    }
                   },
                   child: const Text('Submit'),
                 ),
@@ -188,31 +256,50 @@ ${event.description}
       appBar: AppBar(
         title: const Text('Event Details'),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildMapPlaceholder(),
-            const SizedBox(height: 20),
-            _buildEventTitle(event),
-            const SizedBox(height: 8),
-            _buildEventMeta(event),
-            const SizedBox(height: 8),
-            _buildRatingSummary(),
-            const SizedBox(height: 20),
-            Text(
-              event.description,
-              style: const TextStyle(fontSize: 16),
+      body: FutureBuilder<List<Review>>(
+        future: reviewsFuture,
+        builder: (context, snapshot) {
+          final bool isLoading =
+              snapshot.connectionState == ConnectionState.waiting;
+          final List<Review> eventReviews = snapshot.data ?? [];
+          final double averageRating = calculateAverageRating(eventReviews);
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildMapPlaceholder(),
+                const SizedBox(height: 20),
+                _buildEventTitle(event),
+                const SizedBox(height: 8),
+                _buildEventMeta(event),
+                const SizedBox(height: 8),
+                _buildRatingSummary(
+                  isLoading: isLoading,
+                  snapshot: snapshot,
+                  eventReviews: eventReviews,
+                  averageRating: averageRating,
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  event.description,
+                  style: const TextStyle(fontSize: 16),
+                ),
+                const SizedBox(height: 24),
+                _buildDirectionsButton(),
+                const SizedBox(height: 12),
+                _buildActionButtons(),
+                const SizedBox(height: 24),
+                _buildReviewsSection(
+                  isLoading: isLoading,
+                  snapshot: snapshot,
+                  eventReviews: eventReviews,
+                ),
+              ],
             ),
-            const SizedBox(height: 24),
-            _buildDirectionsButton(),
-            const SizedBox(height: 12),
-            _buildActionButtons(),
-            const SizedBox(height: 24),
-            _buildReviewsSection(),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -252,7 +339,20 @@ ${event.description}
     );
   }
 
-  Widget _buildRatingSummary() {
+  Widget _buildRatingSummary({
+    required bool isLoading,
+    required AsyncSnapshot<List<Review>> snapshot,
+    required List<Review> eventReviews,
+    required double averageRating,
+  }) {
+    if (isLoading) {
+      return const Text('Loading ratings...');
+    }
+
+    if (snapshot.hasError) {
+      return const Text('Could not load ratings');
+    }
+
     return Row(
       children: [
         const Icon(Icons.star, size: 20),
@@ -267,6 +367,10 @@ ${event.description}
   }
 
   Widget _buildDirectionsButton() {
+    if (selectedUserMode == UserMode.businessOwner) {
+      return const SizedBox.shrink();
+    }
+
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
@@ -278,6 +382,14 @@ ${event.description}
   }
 
   Widget _buildActionButtons() {
+    if (selectedUserMode == UserMode.businessOwner) {
+      return _buildBusinessOwnerActions();
+    }
+
+    return _buildEventSeekerActions();
+  }
+
+  Widget _buildEventSeekerActions() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
@@ -302,7 +414,63 @@ ${event.description}
     );
   }
 
-  Widget _buildReviewsSection() {
+  Widget _buildBusinessOwnerActions() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Business Actions',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            IconButton(
+              tooltip: 'Delete event',
+              icon: const Icon(Icons.delete_outline),
+              onPressed: deleteEvent,
+            ),
+            IconButton(
+              tooltip: 'Share event',
+              icon: const Icon(Icons.share),
+              onPressed: shareEvent,
+            ),
+            IconButton(
+              tooltip: 'View reviews',
+              icon: const Icon(Icons.reviews_outlined),
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Reviews are shown below.'),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildReviewsSection({
+    required bool isLoading,
+    required AsyncSnapshot<List<Review>> snapshot,
+    required List<Review> eventReviews,
+  }) {
+    if (isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    if (snapshot.hasError) {
+      return const Text('Could not load reviews.');
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

@@ -8,7 +8,7 @@ class Event {
   final String time;
   final double distance;
 
-  Event({
+  const Event({
     required this.id,
     required this.title,
     required this.description,
@@ -18,4 +18,29 @@ class Event {
     required this.time,
     required this.distance,
   });
+
+  factory Event.fromJson(Map<String, dynamic> json) {
+    return Event(
+      id: json['id'].toString(),
+      title: json['title'] ?? '',
+      description: json['description'] ?? '',
+      location: json['location'] ?? '',
+      category: json['category'] ?? '',
+      date: json['date'] ?? '',
+      time: json['time'] ?? '',
+      distance: (json['distance'] as num).toDouble(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'title': title,
+      'description': description,
+      'location': location,
+      'category': category,
+      'date': date,
+      'time': time,
+      'distance': distance,
+    };
+  }
 }

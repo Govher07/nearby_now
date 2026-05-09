@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../data/mock_events.dart';
+
 import '../models/event.dart';
+import '../services/event_service.dart';
 import '../widgets/event_card.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -15,23 +16,33 @@ class _HomeScreenState extends State<HomeScreen> {
   String selectedCategory = 'All';
   String searchQuery = '';
 
-  List<Event> get filteredEvents {
-    List<Event> events = mockEvents;
+  late Future<List<Event>> eventsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    eventsFuture = EventService.fetchEvents();
+  }
+
+  List<Event> applyFilters(List<Event> events) {
+    List<Event> filteredEvents = events;
 
     if (selectedTime != 'All') {
-      events = events.where((event) => event.date == selectedTime).toList();
+      filteredEvents = filteredEvents
+          .where((event) => event.date == selectedTime)
+          .toList();
     }
 
     if (selectedCategory != 'All') {
-      events = events
+      filteredEvents = filteredEvents
           .where((event) => event.category == selectedCategory)
           .toList();
     }
 
     if (searchQuery.isNotEmpty) {
-      final query = searchQuery.toLowerCase();
+      final String query = searchQuery.toLowerCase();
 
-      events = events.where((event) {
+      filteredEvents = filteredEvents.where((event) {
         return event.title.toLowerCase().contains(query) ||
             event.location.toLowerCase().contains(query) ||
             event.category.toLowerCase().contains(query) ||
@@ -39,7 +50,13 @@ class _HomeScreenState extends State<HomeScreen> {
       }).toList();
     }
 
-    return events;
+    return filteredEvents;
+  }
+
+  void refreshEvents() {
+    setState(() {
+      eventsFuture = EventService.fetchEvents();
+    });
   }
 
   void openFilterSheet() {
@@ -64,9 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-
                   const SizedBox(height: 16),
-
                   const Text(
                     'When?',
                     style: TextStyle(
@@ -74,42 +89,28 @@ class _HomeScreenState extends State<HomeScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-
                   const SizedBox(height: 8),
-
                   Wrap(
                     spacing: 8,
                     children: [
                       buildSheetChip('All', tempTime, (value) {
-                        setSheetState(() {
-                          tempTime = value;
-                        });
+                        setSheetState(() => tempTime = value);
                       }),
                       buildSheetChip('Now', tempTime, (value) {
-                        setSheetState(() {
-                          tempTime = value;
-                        });
+                        setSheetState(() => tempTime = value);
                       }),
                       buildSheetChip('Today', tempTime, (value) {
-                        setSheetState(() {
-                          tempTime = value;
-                        });
+                        setSheetState(() => tempTime = value);
                       }),
                       buildSheetChip('Tomorrow', tempTime, (value) {
-                        setSheetState(() {
-                          tempTime = value;
-                        });
+                        setSheetState(() => tempTime = value);
                       }),
                       buildSheetChip('This Week', tempTime, (value) {
-                        setSheetState(() {
-                          tempTime = value;
-                        });
+                        setSheetState(() => tempTime = value);
                       }),
                     ],
                   ),
-
                   const SizedBox(height: 16),
-
                   const Text(
                     'Category',
                     style: TextStyle(
@@ -117,42 +118,28 @@ class _HomeScreenState extends State<HomeScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-
                   const SizedBox(height: 8),
-
                   Wrap(
                     spacing: 8,
                     children: [
                       buildSheetChip('All', tempCategory, (value) {
-                        setSheetState(() {
-                          tempCategory = value;
-                        });
+                        setSheetState(() => tempCategory = value);
                       }),
                       buildSheetChip('Music', tempCategory, (value) {
-                        setSheetState(() {
-                          tempCategory = value;
-                        });
+                        setSheetState(() => tempCategory = value);
                       }),
                       buildSheetChip('Food', tempCategory, (value) {
-                        setSheetState(() {
-                          tempCategory = value;
-                        });
+                        setSheetState(() => tempCategory = value);
                       }),
                       buildSheetChip('Art', tempCategory, (value) {
-                        setSheetState(() {
-                          tempCategory = value;
-                        });
+                        setSheetState(() => tempCategory = value);
                       }),
                       buildSheetChip('Community', tempCategory, (value) {
-                        setSheetState(() {
-                          tempCategory = value;
-                        });
+                        setSheetState(() => tempCategory = value);
                       }),
                     ],
                   ),
-
                   const SizedBox(height: 20),
-
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -167,9 +154,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: const Text('Apply Filters'),
                     ),
                   ),
-
-                  const SizedBox(height: 8),
-
                   SizedBox(
                     width: double.infinity,
                     child: TextButton(
@@ -228,6 +212,12 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Nearby Now'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: refreshEvents,
+          ),
+        ],
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -242,7 +232,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16),
             child: Text(
@@ -250,7 +239,6 @@ class _HomeScreenState extends State<HomeScreen> {
               style: TextStyle(fontSize: 15),
             ),
           ),
-
           Padding(
             padding: const EdgeInsets.all(16),
             child: TextField(
@@ -266,7 +254,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: OutlinedButton.icon(
@@ -275,33 +262,54 @@ class _HomeScreenState extends State<HomeScreen> {
               label: Text('Filter Events: $activeFilterText'),
             ),
           ),
-
           const SizedBox(height: 12),
-
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
             child: Text(
               'Nearby Events',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
             ),
           ),
-
           const SizedBox(height: 4),
-
           Expanded(
-            child: filteredEvents.isEmpty
-                ? const Center(
+            child: FutureBuilder<List<Event>>(
+              future: eventsFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                }
+
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Text(
+                      'Could not load events.\n${snapshot.error}',
+                      textAlign: TextAlign.center,
+                    ),
+                  );
+                }
+
+                final List<Event> events = snapshot.data ?? [];
+                final List<Event> filteredEvents = applyFilters(events);
+
+                if (filteredEvents.isEmpty) {
+                  return const Center(
                     child: Text('No events found.'),
-                  )
-                : ListView.builder(
-                    itemCount: filteredEvents.length,
-                    itemBuilder: (context, index) {
-                      return EventCard(event: filteredEvents[index]);
-                    },
-                  ),
+                  );
+                }
+
+                return ListView.builder(
+                  itemCount: filteredEvents.length,
+                  itemBuilder: (context, index) {
+                    return EventCard(event: filteredEvents[index]);
+                  },
+                );
+              },
+            ),
           ),
         ],
       ),

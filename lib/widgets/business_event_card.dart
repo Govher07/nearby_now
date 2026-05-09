@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../data/business_events.dart';
-import '../data/mock_events.dart';
-import '../data/reviews.dart';
-import '../data/saved_events.dart';
 import '../models/event.dart';
 import '../screens/event_details_screen.dart';
+import '../services/event_service.dart';
 
 class BusinessEventCard extends StatelessWidget {
   final Event event;
@@ -17,19 +14,28 @@ class BusinessEventCard extends StatelessWidget {
     required this.onDeleted,
   });
 
-  void deleteEvent(BuildContext context) {
-    businessEvents.removeWhere((item) => item.id == event.id);
-    mockEvents.removeWhere((item) => item.id == event.id);
-    savedEvents.removeWhere((item) => item.id == event.id);
-    reviews.removeWhere((review) => review.eventId == event.id);
+  Future<void> deleteEvent(BuildContext context) async {
+    try {
+      await EventService.deleteEvent(event.id);
 
-    onDeleted();
+      if (!context.mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Event deleted'),
-      ),
-    );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Event deleted'),
+        ),
+      );
+
+      onDeleted();
+    } catch (error) {
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Could not delete event: $error'),
+        ),
+      );
+    }
   }
 
   void confirmDelete(BuildContext context) {
@@ -72,8 +78,9 @@ class BusinessEventCard extends StatelessWidget {
         leading: const Icon(Icons.event),
         title: Text(event.title),
         subtitle: Text(
-          '${event.date} • ${event.time} • ${event.location}',
+          '${event.date} • ${event.time}\n${event.location} • ${event.category}',
         ),
+        isThreeLine: true,
         onTap: () {
           Navigator.push(
             context,
@@ -83,6 +90,7 @@ class BusinessEventCard extends StatelessWidget {
           );
         },
         trailing: IconButton(
+          tooltip: 'Delete event',
           icon: const Icon(Icons.delete_outline),
           onPressed: () {
             confirmDelete(context);

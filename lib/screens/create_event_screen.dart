@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../data/mock_events.dart';
-import '../data/business_events.dart';
+
 import '../models/event.dart';
+import '../services/event_service.dart';
 
 class CreateEventScreen extends StatefulWidget {
   final VoidCallback? onEventPosted;
@@ -23,48 +23,66 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
   String selectedDate = 'Today';
   String selectedCategory = 'Music';
+  bool isPosting = false;
 
-  void postEvent() {
-  if (titleController.text.isEmpty ||
-      descriptionController.text.isEmpty ||
-      locationController.text.isEmpty ||
-      timeController.text.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Please fill in all fields')),
+  Future<void> postEvent() async {
+    if (titleController.text.trim().isEmpty ||
+        descriptionController.text.trim().isEmpty ||
+        locationController.text.trim().isEmpty ||
+        timeController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all fields')),
+      );
+      return;
+    }
+
+    final Event newEvent = Event(
+      id: '',
+      title: titleController.text.trim(),
+      description: descriptionController.text.trim(),
+      location: locationController.text.trim(),
+      category: selectedCategory,
+      date: selectedDate,
+      time: timeController.text.trim(),
+      distance: 0.5,
     );
-    return;
+
+    setState(() {
+      isPosting = true;
+    });
+
+    try {
+      await EventService.createEvent(newEvent);
+
+      if (!mounted) return;
+
+      titleController.clear();
+      descriptionController.clear();
+      locationController.clear();
+      timeController.clear();
+
+      setState(() {
+        selectedDate = 'Today';
+        selectedCategory = 'Music';
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Event posted successfully')),
+      );
+
+      widget.onEventPosted?.call();
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not post event: $error')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isPosting = false;
+        });
+      }
+    }
   }
-
-  final newEvent = Event(
-    id: DateTime.now().millisecondsSinceEpoch.toString(),
-    title: titleController.text,
-    description: descriptionController.text,
-    location: locationController.text,
-    category: selectedCategory,
-    date: selectedDate,
-    time: timeController.text,
-    distance: 0.5,
-  );
-
-  mockEvents.add(newEvent);
-  businessEvents.add(newEvent);
-
-  titleController.clear();
-  descriptionController.clear();
-  locationController.clear();
-  timeController.clear();
-
-  setState(() {
-    selectedDate = 'Today';
-    selectedCategory = 'Music';
-  });
-
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text('Event posted successfully')),
-  );
-
-  widget.onEventPosted?.call();
-}
 
   @override
   void dispose() {
@@ -92,9 +110,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 border: OutlineInputBorder(),
               ),
             ),
-
             const SizedBox(height: 12),
-
             TextField(
               controller: descriptionController,
               decoration: const InputDecoration(
@@ -103,9 +119,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
               ),
               maxLines: 3,
             ),
-
             const SizedBox(height: 12),
-
             TextField(
               controller: locationController,
               decoration: const InputDecoration(
@@ -113,9 +127,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 border: OutlineInputBorder(),
               ),
             ),
-
             const SizedBox(height: 12),
-
             TextField(
               controller: timeController,
               decoration: const InputDecoration(
@@ -123,9 +135,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 border: OutlineInputBorder(),
               ),
             ),
-
             const SizedBox(height: 12),
-
             DropdownButtonFormField<String>(
               initialValue: selectedDate,
               decoration: const InputDecoration(
@@ -144,9 +154,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 });
               },
             ),
-
             const SizedBox(height: 12),
-
             DropdownButtonFormField<String>(
               initialValue: selectedCategory,
               decoration: const InputDecoration(
@@ -165,14 +173,14 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 });
               },
             ),
-
             const SizedBox(height: 20),
-
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: postEvent,
-                child: const Text('Post Event'),
+                onPressed: isPosting ? null : postEvent,
+                child: isPosting
+                    ? const Text('Posting...')
+                    : const Text('Post Event'),
               ),
             ),
           ],
