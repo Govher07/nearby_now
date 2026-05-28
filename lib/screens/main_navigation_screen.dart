@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
-import 'home_screen.dart';
-import 'map_screen.dart' as map_screen;
-import 'saved_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../core/data/current_user.dart';
 import 'business_screen.dart';
 import 'create_event_screen.dart';
-import 'profile_screen.dart';
-import '../data/user_mode.dart';
+import 'home_screen.dart';
+import 'map_screen.dart' as map_screen;
 import 'my_events_screen.dart';
+import 'profile_screen.dart';
+import 'saved_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -16,22 +18,47 @@ class MainNavigationScreen extends StatefulWidget {
 }
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
+  static const String selectedTabKey = 'selected_tab_index';
+
   int selectedIndex = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    loadSelectedTab();
+  }
+
+  Future<void> loadSelectedTab() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    if (!mounted) return;
+
+    setState(() {
+      selectedIndex = prefs.getInt(selectedTabKey) ?? 0;
+    });
+  }
+
+  Future<void> saveSelectedTab(int index) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(selectedTabKey, index);
+  }
+
   List<Widget> get screens {
-    if (selectedUserMode == UserMode.businessOwner) {
-        return [
-            const BusinessScreen(),
-            CreateEventScreen(
-                onEventPosted: () {
-                    setState(() {
-                        selectedIndex = 0;
-                    });
-                },
-            ),
-            const MyEventsScreen(),
-            const ProfileScreen(),
-        ];
+    if (currentUser?.role == 'business_owner') {
+      return [
+        const BusinessScreen(),
+        CreateEventScreen(
+          onEventPosted: () {
+            setState(() {
+              selectedIndex = 0;
+            });
+
+            saveSelectedTab(0);
+          },
+        ),
+        const MyEventsScreen(),
+        const ProfileScreen(),
+      ];
     }
 
     return const [
@@ -43,7 +70,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 
   List<NavigationDestination> get destinations {
-    if (selectedUserMode == UserMode.businessOwner) {
+    if (currentUser?.role == 'business_owner') {
       return const [
         NavigationDestination(
           icon: Icon(Icons.dashboard_outlined),
@@ -96,14 +123,18 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     setState(() {
       selectedIndex = index;
     });
+
+    saveSelectedTab(index);
   }
 
   @override
   Widget build(BuildContext context) {
+    final int safeIndex = selectedIndex >= screens.length ? 0 : selectedIndex;
+
     return Scaffold(
-      body: screens[selectedIndex],
+      body: screens[safeIndex],
       bottomNavigationBar: NavigationBar(
-        selectedIndex: selectedIndex,
+        selectedIndex: safeIndex,
         onDestinationSelected: onTabTapped,
         destinations: destinations,
       ),

@@ -1,25 +1,48 @@
 import 'package:flutter/material.dart';
-import '../data/user_mode.dart';
+
+import '../core/data/current_user.dart';
 import 'choose_user_type_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   String get modeText {
-    if (selectedUserMode == UserMode.businessOwner) {
+    if (currentUser?.role == 'business_owner') {
       return 'Business Owner';
     }
+
     return 'Event Seeker';
   }
 
-  void switchMode(BuildContext context) {
-    selectedUserMode = null;
+  String get userName {
+    return currentUser?.name ?? 'Nearby Now User';
+  }
 
-    Navigator.pushReplacement(
+  String get userEmail {
+    return currentUser?.email ?? 'No email available';
+  }
+
+  Future<void> logout(BuildContext context) async {
+    await CurrentUserStorage.clearUser();
+
+    if (!context.mounted) return;
+
+    Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(
         builder: (context) => const ChooseUserTypeScreen(),
       ),
+      (route) => false,
+    );
+  }
+
+  void switchMode(BuildContext context) {
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ChooseUserTypeScreen(),
+      ),
+      (route) => false,
     );
   }
 
@@ -41,12 +64,19 @@ class ProfileScreen extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            const Text(
-              'Nearby Now User',
-              style: TextStyle(
+            Text(
+              userName,
+              style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
+            ),
+
+            const SizedBox(height: 4),
+
+            Text(
+              userEmail,
+              style: const TextStyle(fontSize: 16),
             ),
 
             const SizedBox(height: 8),
@@ -62,7 +92,9 @@ class ProfileScreen extends StatelessWidget {
               child: ListTile(
                 leading: const Icon(Icons.swap_horiz),
                 title: const Text('Switch Account Type'),
-                subtitle: const Text('Change between Event Seeker and Business Owner'),
+                subtitle: const Text(
+                  'Return to role selection and choose a different mode',
+                ),
                 onTap: () {
                   switchMode(context);
                 },
@@ -82,6 +114,17 @@ class ProfileScreen extends StatelessWidget {
                 leading: Icon(Icons.help_outline),
                 title: Text('Help & Support'),
                 subtitle: Text('Coming soon'),
+              ),
+            ),
+
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.logout),
+                title: const Text('Log Out'),
+                subtitle: const Text('Return to account selection'),
+                onTap: () {
+                  logout(context);
+                },
               ),
             ),
           ],

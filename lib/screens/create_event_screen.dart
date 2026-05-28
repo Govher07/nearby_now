@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../models/event.dart';
-import '../services/event_service.dart';
+import '../core/data/current_user.dart';
+import '../core/models/event.dart';
+import '../core/services/event_service.dart';
 
 class CreateEventScreen extends StatefulWidget {
   final VoidCallback? onEventPosted;
@@ -18,17 +19,33 @@ class CreateEventScreen extends StatefulWidget {
 class _CreateEventScreenState extends State<CreateEventScreen> {
   final TextEditingController titleController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
-  final TextEditingController locationController = TextEditingController();
+  final TextEditingController addressLineController = TextEditingController();
+  final TextEditingController cityController = TextEditingController();
+  final TextEditingController stateController = TextEditingController();
+  final TextEditingController countryController = TextEditingController();
+  final TextEditingController zipCodeController = TextEditingController();
   final TextEditingController timeController = TextEditingController();
 
   String selectedDate = 'Today';
   String selectedCategory = 'Music';
   bool isPosting = false;
 
+  String get fullAddress {
+    return '${addressLineController.text.trim()}, '
+        '${cityController.text.trim()}, '
+        '${stateController.text.trim()}, '
+        '${countryController.text.trim()} '
+        '${zipCodeController.text.trim()}';
+  }
+
   Future<void> postEvent() async {
     if (titleController.text.trim().isEmpty ||
         descriptionController.text.trim().isEmpty ||
-        locationController.text.trim().isEmpty ||
+        addressLineController.text.trim().isEmpty ||
+        cityController.text.trim().isEmpty ||
+        stateController.text.trim().isEmpty ||
+        countryController.text.trim().isEmpty ||
+        zipCodeController.text.trim().isEmpty ||
         timeController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill in all fields')),
@@ -40,11 +57,19 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       id: '',
       title: titleController.text.trim(),
       description: descriptionController.text.trim(),
-      location: locationController.text.trim(),
+      location: fullAddress,
       category: selectedCategory,
       date: selectedDate,
       time: timeController.text.trim(),
       distance: 0.5,
+      latitude: 40.785091,
+      longitude: -73.968285,
+      ownerId: currentUser?.id,
+      addressLine: addressLineController.text.trim(),
+      city: cityController.text.trim(),
+      state: stateController.text.trim(),
+      country: countryController.text.trim(),
+      zipCode: zipCodeController.text.trim(),
     );
 
     setState(() {
@@ -58,7 +83,11 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
       titleController.clear();
       descriptionController.clear();
-      locationController.clear();
+      addressLineController.clear();
+      cityController.clear();
+      stateController.clear();
+      countryController.clear();
+      zipCodeController.clear();
       timeController.clear();
 
       setState(() {
@@ -72,6 +101,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
       widget.onEventPosted?.call();
     } catch (error) {
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Could not post event: $error')),
       );
@@ -88,9 +119,30 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   void dispose() {
     titleController.dispose();
     descriptionController.dispose();
-    locationController.dispose();
+    addressLineController.dispose();
+    cityController.dispose();
+    stateController.dispose();
+    countryController.dispose();
+    zipCodeController.dispose();
     timeController.dispose();
     super.dispose();
+  }
+
+  Widget buildTextField({
+    required TextEditingController controller,
+    required String label,
+    String? hint,
+    int maxLines = 1,
+  }) {
+    return TextField(
+      controller: controller,
+      maxLines: maxLines,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        border: const OutlineInputBorder(),
+      ),
+    );
   }
 
   @override
@@ -103,37 +155,50 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            TextField(
+            buildTextField(
               controller: titleController,
-              decoration: const InputDecoration(
-                labelText: 'Event Name',
-                border: OutlineInputBorder(),
-              ),
+              label: 'Event Name',
             ),
             const SizedBox(height: 12),
-            TextField(
+            buildTextField(
               controller: descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Description',
-                border: OutlineInputBorder(),
-              ),
+              label: 'Description',
               maxLines: 3,
             ),
             const SizedBox(height: 12),
-            TextField(
-              controller: locationController,
-              decoration: const InputDecoration(
-                labelText: 'Location',
-                border: OutlineInputBorder(),
-              ),
+            buildTextField(
+              controller: addressLineController,
+              label: 'Address Line',
+              hint: 'Example: 1738 16th Ave NE',
             ),
             const SizedBox(height: 12),
-            TextField(
+            buildTextField(
+              controller: cityController,
+              label: 'City',
+              hint: 'Example: Issaquah',
+            ),
+            const SizedBox(height: 12),
+            buildTextField(
+              controller: stateController,
+              label: 'State',
+              hint: 'Example: WA',
+            ),
+            const SizedBox(height: 12),
+            buildTextField(
+              controller: countryController,
+              label: 'Country',
+              hint: 'Example: United States',
+            ),
+            const SizedBox(height: 12),
+            buildTextField(
+              controller: zipCodeController,
+              label: 'ZIP Code',
+              hint: 'Example: 98027',
+            ),
+            const SizedBox(height: 12),
+            buildTextField(
               controller: timeController,
-              decoration: const InputDecoration(
-                labelText: 'Time, e.g. 6:00 PM',
-                border: OutlineInputBorder(),
-              ),
+              label: 'Time, e.g. 6:00 PM',
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(

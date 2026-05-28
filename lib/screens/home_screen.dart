@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../models/event.dart';
-import '../services/event_service.dart';
+import '../core/models/event.dart';
+import '../core/services/event_service.dart';
 import '../widgets/event_card.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -15,13 +15,14 @@ class _HomeScreenState extends State<HomeScreen> {
   String selectedTime = 'All';
   String selectedCategory = 'All';
   String searchQuery = '';
+  bool isSearchVisible = false;
 
   late Future<List<Event>> eventsFuture;
 
   @override
   void initState() {
     super.initState();
-    eventsFuture = EventService.fetchEvents();
+    eventsFuture = EventService.fetchAllEvents();
   }
 
   List<Event> applyFilters(List<Event> events) {
@@ -46,7 +47,8 @@ class _HomeScreenState extends State<HomeScreen> {
         return event.title.toLowerCase().contains(query) ||
             event.location.toLowerCase().contains(query) ||
             event.category.toLowerCase().contains(query) ||
-            event.description.toLowerCase().contains(query);
+            event.description.toLowerCase().contains(query) ||
+            event.fullAddress.toLowerCase().contains(query);
       }).toList();
     }
 
@@ -55,7 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void refreshEvents() {
     setState(() {
-      eventsFuture = EventService.fetchEvents();
+      eventsFuture = EventService.fetchAllEvents();
     });
   }
 
@@ -81,7 +83,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+
                   const SizedBox(height: 16),
+
                   const Text(
                     'When?',
                     style: TextStyle(
@@ -89,28 +93,42 @@ class _HomeScreenState extends State<HomeScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+
                   const SizedBox(height: 8),
+
                   Wrap(
                     spacing: 8,
                     children: [
                       buildSheetChip('All', tempTime, (value) {
-                        setSheetState(() => tempTime = value);
+                        setSheetState(() {
+                          tempTime = value;
+                        });
                       }),
                       buildSheetChip('Now', tempTime, (value) {
-                        setSheetState(() => tempTime = value);
+                        setSheetState(() {
+                          tempTime = value;
+                        });
                       }),
                       buildSheetChip('Today', tempTime, (value) {
-                        setSheetState(() => tempTime = value);
+                        setSheetState(() {
+                          tempTime = value;
+                        });
                       }),
                       buildSheetChip('Tomorrow', tempTime, (value) {
-                        setSheetState(() => tempTime = value);
+                        setSheetState(() {
+                          tempTime = value;
+                        });
                       }),
                       buildSheetChip('This Week', tempTime, (value) {
-                        setSheetState(() => tempTime = value);
+                        setSheetState(() {
+                          tempTime = value;
+                        });
                       }),
                     ],
                   ),
+
                   const SizedBox(height: 16),
+
                   const Text(
                     'Category',
                     style: TextStyle(
@@ -118,28 +136,42 @@ class _HomeScreenState extends State<HomeScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+
                   const SizedBox(height: 8),
+
                   Wrap(
                     spacing: 8,
                     children: [
                       buildSheetChip('All', tempCategory, (value) {
-                        setSheetState(() => tempCategory = value);
+                        setSheetState(() {
+                          tempCategory = value;
+                        });
                       }),
                       buildSheetChip('Music', tempCategory, (value) {
-                        setSheetState(() => tempCategory = value);
+                        setSheetState(() {
+                          tempCategory = value;
+                        });
                       }),
                       buildSheetChip('Food', tempCategory, (value) {
-                        setSheetState(() => tempCategory = value);
+                        setSheetState(() {
+                          tempCategory = value;
+                        });
                       }),
                       buildSheetChip('Art', tempCategory, (value) {
-                        setSheetState(() => tempCategory = value);
+                        setSheetState(() {
+                          tempCategory = value;
+                        });
                       }),
                       buildSheetChip('Community', tempCategory, (value) {
-                        setSheetState(() => tempCategory = value);
+                        setSheetState(() {
+                          tempCategory = value;
+                        });
                       }),
                     ],
                   ),
+
                   const SizedBox(height: 20),
+
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -154,6 +186,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: const Text('Apply Filters'),
                     ),
                   ),
+
                   SizedBox(
                     width: double.infinity,
                     child: TextButton(
@@ -214,66 +247,75 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('Nearby Now'),
         actions: [
           IconButton(
+            tooltip: 'Search',
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              setState(() {
+                isSearchVisible = !isSearchVisible;
+              });
+            },
+          ),
+          IconButton(
+            tooltip: 'Filter',
+            icon: const Icon(Icons.tune),
+            onPressed: openFilterSheet,
+          ),
+          IconButton(
+            tooltip: 'Refresh',
             icon: const Icon(Icons.refresh),
             onPressed: refreshEvents,
           ),
         ],
       ),
       body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
-            child: Text(
-              'Find events near you',
-              style: TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
+          if (isSearchVisible)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: TextField(
+                autofocus: true,
+                onChanged: (value) {
+                  setState(() {
+                    searchQuery = value;
+                  });
+                },
+                decoration: InputDecoration(
+                  hintText: 'Search events...',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () {
+                      setState(() {
+                        searchQuery = '';
+                        isSearchVisible = false;
+                      });
+                    },
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
               ),
             ),
-          ),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              'Discover events happening now, today, tomorrow, and this week.',
-              style: TextStyle(fontSize: 15),
-            ),
-          ),
+
           Padding(
-            padding: const EdgeInsets.all(16),
-            child: TextField(
-              onChanged: (value) {
-                setState(() {
-                  searchQuery = value;
-                });
-              },
-              decoration: const InputDecoration(
-                hintText: 'Search by event, location, or category...',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
-              ),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 6,
+            ),
+            child: Row(
+              children: [
+                Text(
+                  activeFilterText,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: OutlinedButton.icon(
-              onPressed: openFilterSheet,
-              icon: const Icon(Icons.tune),
-              label: Text('Filter Events: $activeFilterText'),
-            ),
-          ),
-          const SizedBox(height: 12),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              'Nearby Events',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          const SizedBox(height: 4),
+
           Expanded(
             child: FutureBuilder<List<Event>>(
               future: eventsFuture,
@@ -303,6 +345,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 }
 
                 return ListView.builder(
+                  padding: const EdgeInsets.only(bottom: 16),
                   itemCount: filteredEvents.length,
                   itemBuilder: (context, index) {
                     return EventCard(event: filteredEvents[index]);

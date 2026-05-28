@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../models/event.dart';
+import '../core/models/event.dart';
 import '../screens/event_details_screen.dart';
-import '../services/event_service.dart';
+import '../core/services/event_service.dart';
 
 class BusinessEventCard extends StatelessWidget {
   final Event event;

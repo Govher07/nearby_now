@@ -2,19 +2,18 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
-import '../data/user_mode.dart';
-import 'main_navigation_screen.dart';
+import '../screens/login_screen.dart';
 
 class ChooseUserTypeScreen extends StatelessWidget {
   const ChooseUserTypeScreen({super.key});
 
-  void chooseMode(BuildContext context, UserMode mode) {
-    selectedUserMode = mode;
-
-    Navigator.pushReplacement(
+  void chooseMode(BuildContext context, String role) {
+    Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const MainNavigationScreen(),
+        builder: (context) => LoginScreen(
+          selectedRole: role,
+        ),
       ),
     );
   }
@@ -26,11 +25,10 @@ class ChooseUserTypeScreen extends StatelessWidget {
         children: [
           Positioned.fill(
             child: Image.asset(
-              'assets/images/4.png',
+              'assets/images/90.png',
               fit: BoxFit.cover,
             ),
           ),
-
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -46,14 +44,12 @@ class ChooseUserTypeScreen extends StatelessWidget {
               ),
             ),
           ),
-
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 28),
               child: Column(
                 children: [
                   const SizedBox(height: 90),
-
                   const Text(
                     'Nearby\nNow',
                     textAlign: TextAlign.center,
@@ -65,9 +61,7 @@ class ChooseUserTypeScreen extends StatelessWidget {
                       letterSpacing: 1.2,
                     ),
                   ),
-
                   const SizedBox(height: 18),
-
                   const Text(
                     'Choose how you want to explore local events.',
                     textAlign: TextAlign.center,
@@ -76,9 +70,7 @@ class ChooseUserTypeScreen extends StatelessWidget {
                       color: Colors.white70,
                     ),
                   ),
-
                   const Spacer(),
-
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -86,7 +78,7 @@ class ChooseUserTypeScreen extends StatelessWidget {
                         icon: Icons.event_available_outlined,
                         title: 'Event\nSeeker',
                         onTap: () {
-                          chooseMode(context, UserMode.eventSeeker);
+                          chooseMode(context, 'event_seeker');
                         },
                       ),
                       const SizedBox(width: 18),
@@ -94,51 +86,14 @@ class ChooseUserTypeScreen extends StatelessWidget {
                         icon: Icons.storefront_outlined,
                         title: 'Business\nOwner',
                         onTap: () {
-                          chooseMode(context, UserMode.businessOwner);
+                          chooseMode(context, 'business_owner');
                         },
                       ),
                     ],
                   ),
-
-                  const SizedBox(height: 48),
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                        'Already have an account? ',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 15,
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () {},
-                        child: const Text(
-                          'Log In',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
                   const SizedBox(height: 42),
                 ],
               ),
-            ),
-          ),
-
-          Positioned(
-            right: 28,
-            bottom: 32,
-            child: Icon(
-              Icons.auto_awesome,
-              color: Colors.white.withValues(alpha: 0.75),
-              size: 34,
             ),
           ),
         ],

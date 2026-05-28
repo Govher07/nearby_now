@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../data/user_mode.dart';
-import '../models/event.dart';
-import '../models/review.dart';
-import '../services/event_service.dart';
-import '../services/review_service.dart';
-import '../services/saved_event_service.dart';
+import '../core/models/event.dart';
+import '../core/models/review.dart';
+import '../core/services/event_service.dart';
+import '../core/services/review_service.dart';
+import '../core/services/saved_event_service.dart';
+import '../core/data/current_user.dart';
+import 'edit_event_screen.dart';
+import '../core/services/directions_service.dart';
+import '../widgets/event_map.dart';
 
 class EventDetailsScreen extends StatefulWidget {
   final Event event;
@@ -304,19 +307,15 @@ ${event.description}
     );
   }
 
-  Widget _buildMapPlaceholder() {
-    return Container(
-      height: 180,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.grey[300],
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Center(
-        child: Text('Map / Event Image'),
-      ),
-    );
-  }
+ Widget _buildMapPlaceholder() {
+  return ClipRRect(
+    borderRadius: BorderRadius.circular(12),
+    child: EventMap(
+      events: [widget.event],
+      height: 200,
+    ),
+  );
+}
 
   Widget _buildEventTitle(Event event) {
     return Text(
@@ -334,7 +333,7 @@ ${event.description}
       children: [
         Text('${event.date} at ${event.time}'),
         Text('${event.distance} miles away'),
-        Text(event.location),
+        Text(event.fullAddress),
       ],
     );
   }
@@ -367,7 +366,7 @@ ${event.description}
   }
 
   Widget _buildDirectionsButton() {
-    if (selectedUserMode == UserMode.businessOwner) {
+    if (currentUser?.role == 'business_owner') {
       return const SizedBox.shrink();
     }
 
@@ -376,13 +375,27 @@ ${event.description}
       child: ElevatedButton.icon(
         icon: const Icon(Icons.directions),
         label: const Text('Get Directions'),
-        onPressed: () {},
+        onPressed: () async {
+          try {
+            await DirectionsService.openDirectionsToAddress(
+              destinationAddress: widget.event.location,
+            );
+          } catch (error) {
+            if (!context.mounted) return;
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Could not open directions: $error'),
+              ),
+            );
+          }
+        },
       ),
     );
   }
 
   Widget _buildActionButtons() {
-    if (selectedUserMode == UserMode.businessOwner) {
+    if (currentUser?.role == 'business_owner') {
       return _buildBusinessOwnerActions();
     }
 
@@ -390,71 +403,76 @@ ${event.description}
   }
 
   Widget _buildEventSeekerActions() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        IconButton(
-          tooltip: isSaved ? 'Remove from saved' : 'Save event',
-          icon: Icon(
-            isSaved ? Icons.bookmark : Icons.bookmark_border,
-          ),
-          onPressed: toggleSave,
+  return Row(
+    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    children: [
+      IconButton(
+        tooltip: isSaved ? 'Remove from saved' : 'Save event',
+        icon: Icon(
+          isSaved ? Icons.bookmark : Icons.bookmark_border,
         ),
-        IconButton(
-          tooltip: 'Rate event',
-          icon: const Icon(Icons.star_border),
-          onPressed: openReviewDialog,
-        ),
-        IconButton(
-          tooltip: 'Share event',
-          icon: const Icon(Icons.share),
-          onPressed: shareEvent,
-        ),
-      ],
-    );
-  }
+        onPressed: toggleSave,
+      ),
+      IconButton(
+        tooltip: 'Rate event',
+        icon: const Icon(Icons.star_border),
+        onPressed: openReviewDialog,
+      ),
+      IconButton(
+        tooltip: 'Share event',
+        icon: const Icon(Icons.share),
+        onPressed: shareEvent,
+      ),
+    ],
+  );
+}
 
   Widget _buildBusinessOwnerActions() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Business Actions',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const SizedBox(height: 12),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          IconButton(
+            tooltip: 'Edit event',
+            icon: const Icon(Icons.edit_outlined),
+            onPressed: () async {
+              final bool? wasUpdated = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => EditEventScreen(event: widget.event),
+                ),
+              );
+
+              if (wasUpdated == true && mounted) {
+                Navigator.pop(context, true);
+              }
+            },
           ),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            IconButton(
-              tooltip: 'Delete event',
-              icon: const Icon(Icons.delete_outline),
-              onPressed: deleteEvent,
-            ),
-            IconButton(
-              tooltip: 'Share event',
-              icon: const Icon(Icons.share),
-              onPressed: shareEvent,
-            ),
-            IconButton(
-              tooltip: 'View reviews',
-              icon: const Icon(Icons.reviews_outlined),
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Reviews are shown below.'),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-      ],
-    );
-  }
+          IconButton(
+            tooltip: 'Delete event',
+            icon: const Icon(Icons.delete_outline),
+            onPressed: deleteEvent,
+          ),
+          IconButton(
+            tooltip: 'View reviews',
+            icon: const Icon(Icons.reviews_outlined),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Reviews are shown below.'),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    ],
+  );
+}
+
 
   Widget _buildReviewsSection({
     required bool isLoading,

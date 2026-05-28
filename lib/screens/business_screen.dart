@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../models/event.dart';
-import '../services/event_service.dart';
+import '../core/models/event.dart';
+import '../core/services/event_service.dart';
 import '../widgets/business_event_card.dart';
+import '../core/data/current_user.dart';
 
 class BusinessScreen extends StatefulWidget {
   const BusinessScreen({super.key});
@@ -17,12 +18,12 @@ class _BusinessScreenState extends State<BusinessScreen> {
   @override
   void initState() {
     super.initState();
-    eventsFuture = EventService.fetchEvents();
+    eventsFuture = EventService.fetchMyEvents(currentUser!.id);
   }
 
   void refreshDashboard() {
     setState(() {
-      eventsFuture = EventService.fetchEvents();
+      eventsFuture = EventService.fetchMyEvents(currentUser!.id);
     });
   }
 

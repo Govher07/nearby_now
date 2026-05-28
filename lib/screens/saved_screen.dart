@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../models/event.dart';
-import '../services/event_service.dart';
-import '../services/saved_event_service.dart';
+import '../core/models/event.dart';
+import '../core/services/event_service.dart';
+import '../core/services/saved_event_service.dart';
 import '../widgets/event_card.dart';
-import '../models/saved_event.dart';
+import '../core/models/saved_event.dart';
 
 class SavedScreen extends StatefulWidget {
   const SavedScreen({super.key});
