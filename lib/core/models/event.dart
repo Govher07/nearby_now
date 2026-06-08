@@ -49,9 +49,9 @@ class Event {
       category: json['category'] ?? '',
       date: json['date'] ?? '',
       time: json['time'] ?? '',
-      distance: (json['distance'] as num?)?.toDouble() ?? 0.5,
-      latitude: (json['latitude'] as num?)?.toDouble() ?? 40.785091,
-      longitude: (json['longitude'] as num?)?.toDouble() ?? -73.968285,
+      distance: (json['distance'] as num?)?.toDouble() ?? 0.0,
+      latitude: (json['latitude'] as num?)?.toDouble() ?? 0.0,
+      longitude: (json['longitude'] as num?)?.toDouble() ?? 0.0,
       ownerId: json['owner_id']?.toString(),
       imageUrl: json['image_url']?.toString(),
       source: json['source']?.toString(),
@@ -84,6 +84,48 @@ class Event {
       'zip_code': zipCode,
     };
   }
+
+  Event copyWith({
+  String? id,
+  String? title,
+  String? description,
+  String? location,
+  String? category,
+  String? date,
+  String? time,
+  double? distance,
+  double? latitude,
+  double? longitude,
+  String? ownerId,
+  String? imageUrl,
+  String? source,
+  String? addressLine,
+  String? city,
+  String? state,
+  String? country,
+  String? zipCode,
+}) {
+  return Event(
+    id: id ?? this.id,
+    title: title ?? this.title,
+    description: description ?? this.description,
+    location: location ?? this.location,
+    category: category ?? this.category,
+    date: date ?? this.date,
+    time: time ?? this.time,
+    distance: distance ?? this.distance,
+    latitude: latitude ?? this.latitude,
+    longitude: longitude ?? this.longitude,
+    ownerId: ownerId ?? this.ownerId,
+    imageUrl: imageUrl ?? this.imageUrl,
+    source: source ?? this.source,
+    addressLine: addressLine ?? this.addressLine,
+    city: city ?? this.city,
+    state: state ?? this.state,
+    country: country ?? this.country,
+    zipCode: zipCode ?? this.zipCode,
+  );
+}
 
   String get fullAddress {
     final List<String> parts = [

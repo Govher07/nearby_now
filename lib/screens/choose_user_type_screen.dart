@@ -2,17 +2,26 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
-import '../screens/login_screen.dart';
+import '../core/app_mode.dart' as app_mode;
+import '../core/data/current_user.dart';
+import '../screens/main_navigation_screen.dart';
 
 class ChooseUserTypeScreen extends StatelessWidget {
   const ChooseUserTypeScreen({super.key});
 
   void chooseMode(BuildContext context, String role) {
-    Navigator.push(
+    app_mode.selectedAppRole = role;
+
+    // Prevent old logged-in user from leaking into the other mode.
+    if (currentUser?.role != role) {
+      currentUser = null;
+    }
+
+    Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => LoginScreen(
-          selectedRole: role,
+        builder: (context) => const MainNavigationScreen(
+          forceHomeTab: true,
         ),
       ),
     );
@@ -20,59 +29,97 @@ class ChooseUserTypeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double screenHeight = MediaQuery.sizeOf(context).height;
+    final bool isShortScreen = screenHeight < 700;
+
     return Scaffold(
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: Image.asset(
+      resizeToAvoidBottomInset: false,
+      body: SizedBox.expand(
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.asset(
               'assets/images/90.png',
               fit: BoxFit.cover,
+              width: double.infinity,
+              height: double.infinity,
+              alignment: Alignment.center,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  color: Colors.black,
+                  alignment: Alignment.center,
+                  child: const Text(
+                    'Background image failed to load',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                    ),
+                  ),
+                );
+              },
             ),
-          ),
-          Positioned.fill(
-            child: Container(
+
+            Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
                     Colors.black.withValues(alpha: 0.05),
-                    Colors.black.withValues(alpha: 0.06),
-                    Colors.black.withValues(alpha: 0.14),
+                    Colors.black.withValues(alpha: 0.08),
+                    Colors.black.withValues(alpha: 0.22),
                   ],
                 ),
               ),
             ),
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 28),
-              child: Column(
-                children: [
-                  const SizedBox(height: 90),
-                  const Text(
-                    'Nearby\nNow',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 58,
-                      height: 0.95,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
-                      letterSpacing: 1.2,
+
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 28),
+                child: Column(
+                  children: [
+                    SizedBox(height: isShortScreen ? 42 : 70),
+
+                    const Text(
+                      'Nearby\nNow',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 54,
+                        height: 0.95,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                        letterSpacing: 1.2,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 18),
-                  const Text(
-                    'Choose how you want to explore local events.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 17,
-                      color: Colors.white70,
+
+                    const SizedBox(height: 18),
+
+                    const Text(
+                      'Choose how you want to explore local events.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 17,
+                        color: Colors.white70,
+                      ),
                     ),
+                  ],
+                ),
+              ),
+            ),
+
+            SafeArea(
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    left: 28,
+                    right: 28,
+                    bottom: isShortScreen ? 28 : 42,
                   ),
-                  const Spacer(),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  child: Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 18,
+                    runSpacing: 18,
                     children: [
                       _RoleCard(
                         icon: Icons.event_available_outlined,
@@ -81,7 +128,6 @@ class ChooseUserTypeScreen extends StatelessWidget {
                           chooseMode(context, 'event_seeker');
                         },
                       ),
-                      const SizedBox(width: 18),
                       _RoleCard(
                         icon: Icons.storefront_outlined,
                         title: 'Business\nOwner',
@@ -91,12 +137,11 @@ class ChooseUserTypeScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 42),
-                ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -115,16 +160,15 @@ class _RoleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(26),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Material(
-          color: Colors.white.withValues(alpha: 0.10),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(26),
+        onTap: onTap,
+        child: ClipRRect(
           borderRadius: BorderRadius.circular(26),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(26),
-            onTap: onTap,
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
             child: Container(
               width: 150,
               height: 150,
@@ -133,6 +177,7 @@ class _RoleCard extends StatelessWidget {
                 vertical: 18,
               ),
               decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(26),
                 border: Border.all(
                   color: Colors.white.withValues(alpha: 0.35),

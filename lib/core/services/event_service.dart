@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:http/http.dart' as http;
 
@@ -24,6 +25,60 @@ class EventService {
       return Event.fromJson(json);
     }).toList();
   }
+
+  static double calculateDistanceInMiles({
+    required double userLatitude,
+    required double userLongitude,
+    required double eventLatitude,
+    required double eventLongitude,
+  }) {
+    const double earthRadiusMiles = 3958.8;
+
+    final double lat1 = _degreesToRadians(userLatitude);
+    final double lon1 = _degreesToRadians(userLongitude);
+    final double lat2 = _degreesToRadians(eventLatitude);
+    final double lon2 = _degreesToRadians(eventLongitude);
+
+    final double latDifference = lat2 - lat1;
+    final double lonDifference = lon2 - lon1;
+
+    final double a = sin(latDifference / 2) * sin(latDifference / 2) +
+        cos(lat1) *
+            cos(lat2) *
+            sin(lonDifference / 2) *
+            sin(lonDifference / 2);
+
+    final double c = 2 * atan2(sqrt(a), sqrt(1 - a));
+
+    return earthRadiusMiles * c;
+  }
+
+  static double _degreesToRadians(double degrees) {
+    return degrees * pi / 180;
+  }
+
+ static List<Event> applyDistanceFromUser({
+  required List<Event> events,
+  required double userLatitude,
+  required double userLongitude,
+}) {
+  return events.map((event) {
+    if (event.latitude == 0.0 && event.longitude == 0.0) {
+      return event;
+    }
+
+    final double calculatedDistance = calculateDistanceInMiles(
+      userLatitude: userLatitude,
+      userLongitude: userLongitude,
+      eventLatitude: event.latitude,
+      eventLongitude: event.longitude,
+    );
+
+    return event.copyWith(
+      distance: double.parse(calculatedDistance.toStringAsFixed(1)),
+    );
+  }).toList();
+}
 
   // GET /external-events
   static Future<List<Event>> fetchExternalEvents({
@@ -56,7 +111,13 @@ class EventService {
 
   // Internal Nearby Now events + external Ticketmaster events
  static Future<List<Event>> fetchAllEvents() async {
-  final List<Event> internalEvents = await fetchEvents();
+  List<Event> internalEvents = [];
+
+  try {
+    internalEvents = await fetchEvents();
+  } catch (error) {
+    print('Local events failed: $error');
+  }
 
   try {
     final position = await LocationService.getCurrentLocation();
@@ -67,12 +128,19 @@ class EventService {
       radius: 25,
     );
 
-    return [
+    final List<Event> allEvents = [
       ...internalEvents,
       ...externalEvents,
     ];
+
+    return applyDistanceFromUser(
+      events: allEvents,
+      userLatitude: position.latitude,
+      userLongitude: position.longitude,
+    );
   } catch (error) {
-    // If location fails, still show internal Nearby Now events.
+    print('External events or location failed: $error');
+
     return internalEvents;
   }
 }
@@ -126,6 +194,25 @@ class EventService {
     }).toList();
   }
 
+  // GET /my-events/{ownerId}/analytics
+  static Future<Map<String, int>> fetchBusinessAnalytics(String ownerId) async {
+    final Uri url = Uri.parse('$baseUrl/my-events/$ownerId/analytics');
+
+    final response = await http.get(url);
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load business analytics: ${response.body}');
+    }
+
+    final Map<String, dynamic> jsonData = jsonDecode(response.body);
+
+    return {
+      'total_events': (jsonData['total_events'] as num?)?.toInt() ?? 0,
+      'total_views': (jsonData['total_views'] as num?)?.toInt() ?? 0,
+      'total_saves': (jsonData['total_saves'] as num?)?.toInt() ?? 0,
+    };
+  }
+
   // GET /events/{eventId}/save-count
   static Future<int> fetchSaveCount(String eventId) async {
     final Uri url = Uri.parse('$baseUrl/events/$eventId/save-count');
@@ -138,7 +225,7 @@ class EventService {
 
     final Map<String, dynamic> jsonData = jsonDecode(response.body);
 
-    return jsonData['save_count'] ?? 0;
+    return (jsonData['save_count'] as num?)?.toInt() ?? 0;
   }
 
   // POST /events/{eventId}/view
@@ -153,7 +240,24 @@ class EventService {
 
     final Map<String, dynamic> jsonData = jsonDecode(response.body);
 
-    return jsonData['views'] ?? 0;
+    return (jsonData['views'] as num?)?.toInt() ?? 0;
+  }
+
+  static Future<void> recordEventView(String eventId) async {
+    await addView(eventId);
+  }
+
+  // GET /events/{eventId}/analytics
+  static Future<Map<String, dynamic>> fetchEventAnalytics(String eventId) async {
+    final Uri url = Uri.parse('$baseUrl/events/$eventId/analytics');
+
+    final response = await http.get(url);
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load event analytics: ${response.body}');
+    }
+
+    return jsonDecode(response.body) as Map<String, dynamic>;
   }
 
   // PUT /events/{eventId}

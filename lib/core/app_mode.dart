@@ -1,0 +1,1 @@
+String selectedAppRole = 'event_seeker';

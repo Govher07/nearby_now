@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../core/models/event.dart';
-import '../../screens/event_details_screen.dart';
+import '../core/util/category_image_picker.dart';
+import '../screens/event_details_screen.dart';
 
 class EventCard extends StatelessWidget {
   final Event event;
@@ -11,22 +12,58 @@ class EventCard extends StatelessWidget {
     required this.event,
   });
 
-  String get fallbackImage {
-    switch (event.category.toLowerCase()) {
-      case 'music':
-        return 'assets/images/music_event.jpg';
-      case 'food':
-        return 'assets/images/food_event.jpg';
-      case 'art':
-      case 'arts & theatre':
-        return 'assets/images/art_event.jpg';
-      default:
-        return 'assets/images/default_event.jpg';
-    }
-  }
-
   bool get isExternal {
     return event.source == 'ticketmaster';
+  }
+
+  Widget buildEventImage() {
+    final String imagePath = CategoryImagePicker.imageForEvent(
+      eventId: event.id,
+      category: event.category,
+      imageUrl: event.imageUrl,
+    );
+
+    if (CategoryImagePicker.isNetworkImage(imagePath)) {
+      return Image.network(
+        imagePath,
+        height: 160,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return buildImageFallback();
+        },
+      );
+    }
+
+    return Image.asset(
+      imagePath,
+      height: 160,
+      width: double.infinity,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        return buildImageFallback();
+      },
+    );
+  }
+
+  Widget buildImageFallback() {
+    return Container(
+      height: 160,
+      width: double.infinity,
+      color: Colors.grey.shade300,
+      alignment: Alignment.center,
+      child: const Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.image_not_supported_outlined,
+            size: 36,
+          ),
+          SizedBox(height: 6),
+          Text('Image not available'),
+        ],
+      ),
+    );
   }
 
   @override
@@ -52,40 +89,21 @@ class EventCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            event.imageUrl != null && event.imageUrl!.isNotEmpty
-                ? Image.network(
-                    event.imageUrl!,
-                    height: 160,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Image.asset(
-                        fallbackImage,
-                        height: 160,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                      );
-                    },
-                  )
-                : Image.asset(
-                    fallbackImage,
-                    height: 160,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
+            buildEventImage(),
 
             Padding(
               padding: const EdgeInsets.all(14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
                     children: [
                       Chip(
                         label: Text(event.category),
                         visualDensity: VisualDensity.compact,
                       ),
-                      const SizedBox(width: 8),
                       if (isExternal)
                         const Chip(
                           label: Text('Ticketmaster'),
@@ -98,6 +116,8 @@ class EventCard extends StatelessWidget {
 
                   Text(
                     event.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 19,
                       fontWeight: FontWeight.bold,
@@ -110,7 +130,13 @@ class EventCard extends StatelessWidget {
                     children: [
                       const Icon(Icons.calendar_today_outlined, size: 16),
                       const SizedBox(width: 6),
-                      Text('${event.date} • ${event.time}'),
+                      Expanded(
+                        child: Text(
+                          '${event.date} • ${event.time}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ],
                   ),
 
@@ -122,20 +148,25 @@ class EventCard extends StatelessWidget {
                       const Icon(Icons.location_on_outlined, size: 17),
                       const SizedBox(width: 6),
                       Expanded(
-                        child: Text(event.fullAddress),
+                        child: Text(
+                          event.fullAddress,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   ),
 
                   const SizedBox(height: 6),
 
-                  Row(
-                    children: [
-                      const Icon(Icons.directions_walk, size: 17),
-                      const SizedBox(width: 6),
-                      Text('${event.distance} miles away'),
-                    ],
-                  ),
+                  if (event.distance > 0)
+                    Row(
+                      children: [
+                        const Icon(Icons.directions_walk, size: 17),
+                        const SizedBox(width: 6),
+                        Text('${event.distance.toStringAsFixed(1)} miles away'),
+                      ],
+                    ),
                 ],
               ),
             ),

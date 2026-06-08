@@ -66,6 +66,23 @@ flutter:
 
   assets:
     - assets/images/
+    - assets/images/music/
+    - assets/images/sports/
+    - assets/images/food/
+    - assets/images/social/
+    - assets/images/art/
+    - assets/images/comedy/
+    - assets/images/family/
+    - assets/images/nightlife/
+    - assets/images/outdoor/
+    - assets/images/fitness/
+    - assets/images/business/
+    - assets/images/education/
+    - assets/images/community/
+    - assets/images/theater/
+    - assets/images/market/
+    - assets/images/charity/
+    - assets/images/default/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

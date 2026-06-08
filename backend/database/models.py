@@ -23,18 +23,20 @@ class EventDB(Base):
     time = Column(String(100), nullable=False)
     distance = Column(Float, default=0.5)
     location = Column(String(255), nullable=True)
-
     address_line = Column(String(255), nullable=False)
     city = Column(String(100), nullable=False)
     state = Column(String(100), nullable=False)
     country = Column(String(100), nullable=False)
     zip_code = Column(String(30), nullable=False)
-
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
     owner_id = Column(String(100), ForeignKey("users.id"), nullable=True)
     image_url = Column(String(1000), nullable=True)
     source = Column(String(100), default="nearby_now")
+    views = Column(Integer, default=0)
+    image_url = Column(String(1000), nullable=True)
+    source = Column(String(100), default="nearby_now")
+    views = Column(Integer, default=0)
 
 
 class ReviewDB(Base):

@@ -1,17 +1,20 @@
-from fastapi import Depends, FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
+from datetime import datetime
+from math import atan2, cos, radians, sin, sqrt
 from typing import List
 from uuid import uuid4
 import os
+
 import requests
 from dotenv import load_dotenv
-from math import radians, sin, cos, sqrt, atan2
-from datetime import datetime
+from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
 
 import schemas
 from database.database import Base, engine, get_db
 from database.models import EventDB, ReviewDB, SavedEventDB, UserDB
+from security import hash_password, looks_like_bcrypt_hash, verify_password
+
 
 load_dotenv()
 
@@ -27,7 +30,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-def calculate_distance_miles(lat1: float, lng1: float, lat2: float, lng2: float):
+
+# --------------------
+# Helpers
+# --------------------
+
+def calculate_distance_miles(
+    lat1: float,
+    lng1: float,
+    lat2: float,
+    lng2: float,
+):
     earth_radius_miles = 3958.8
 
     dlat = radians(lat2 - lat1)
@@ -42,6 +55,7 @@ def calculate_distance_miles(lat1: float, lng1: float, lat2: float, lng2: float)
 
     return round(earth_radius_miles * c, 2)
 
+
 def format_time_to_ampm(time_value: str):
     if not time_value or time_value == "Unknown time":
         return "Unknown time"
@@ -51,7 +65,7 @@ def format_time_to_ampm(time_value: str):
         return parsed_time.strftime("%I:%M %p").lstrip("0")
     except ValueError:
         return time_value
-    
+
 
 def normalize_ticketmaster_event(
     ticketmaster_event: dict,
@@ -81,15 +95,16 @@ def normalize_ticketmaster_event(
     state = venue.get("state", {}).get("stateCode", "")
     country = venue.get("country", {}).get("name", "")
     address_line = venue.get("address", {}).get("line1", "")
+    zip_code = venue.get("postalCode")
 
     location = ", ".join(
-        part for part in [venue_name, address_line, city, state, country]
+        part for part in [venue_name, address_line, city, state, country, zip_code]
         if part
     )
 
     coordinates = venue.get("location", {})
-    latitude = float(coordinates.get("latitude", 40.785091))
-    longitude = float(coordinates.get("longitude", -73.968285))
+    latitude = float(coordinates.get("latitude") or user_lat)
+    longitude = float(coordinates.get("longitude") or user_lng)
 
     distance = calculate_distance_miles(
         user_lat,
@@ -122,8 +137,7 @@ def normalize_ticketmaster_event(
         "city": city,
         "state": state,
         "country": country,
-        "zip_code": None,
-        "source": "ticketmaster",
+        "zip_code": zip_code,
     }
 
 
@@ -175,7 +189,6 @@ def fetch_ticketmaster_events(
     ]
 
 
-
 # --------------------
 # Root
 # --------------------
@@ -184,8 +197,9 @@ def fetch_ticketmaster_events(
 def root():
     return {"message": "Nearby Now API is running"}
 
+
 # --------------------
-# Login
+# Auth
 # --------------------
 
 @app.post("/register", response_model=schemas.User)
@@ -198,13 +212,16 @@ def register_user(
     ).first()
 
     if existing_user is not None:
-        raise HTTPException(status_code=400, detail="Email already registered")
+        raise HTTPException(
+            status_code=400,
+            detail="Email already registered",
+        )
 
     new_user = UserDB(
         id=str(uuid4()),
         name=user.name,
         email=user.email,
-        password_hash=user.password,
+        password_hash=hash_password(user.password),
         role=user.role,
     )
 
@@ -225,10 +242,33 @@ def login_user(
     ).first()
 
     if existing_user is None:
-        raise HTTPException(status_code=401, detail="Invalid email or password")
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or password",
+        )
 
-    if existing_user.password_hash != user.password:
-        raise HTTPException(status_code=401, detail="Invalid email or password")
+    stored_password = existing_user.password_hash
+
+    if looks_like_bcrypt_hash(stored_password):
+        password_is_valid = verify_password(
+            user.password,
+            stored_password,
+        )
+    else:
+        # Backward compatibility for old test users stored as plain text.
+        password_is_valid = user.password == stored_password
+
+        # If old plain password is correct, upgrade it to bcrypt hash.
+        if password_is_valid:
+            existing_user.password_hash = hash_password(user.password)
+            db.commit()
+            db.refresh(existing_user)
+
+    if not password_is_valid:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or password",
+        )
 
     return existing_user
 
@@ -241,9 +281,93 @@ def get_current_user(
     user = db.query(UserDB).filter(UserDB.id == user_id).first()
 
     if user is None:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(
+            status_code=404,
+            detail="User not found",
+        )
 
     return user
+
+
+# --------------------
+# Geocoding
+# --------------------
+
+@app.get("/geocode")
+def geocode_address(address: str = Query(...)):
+    cleaned_address = address.strip()
+
+    if not cleaned_address:
+        raise HTTPException(
+            status_code=400,
+            detail="Address is required",
+        )
+
+    address_parts = [
+        part.strip()
+        for part in cleaned_address.split(",")
+        if part.strip()
+    ]
+
+    search_queries = []
+
+    # 1. Try full address first.
+    search_queries.append(cleaned_address)
+
+    # 2. Try without street address.
+    if len(address_parts) >= 4:
+        search_queries.append(", ".join(address_parts[1:]))
+
+    # 3. Try city + state + zip.
+    if len(address_parts) >= 5:
+        city = address_parts[1]
+        state = address_parts[2]
+        zip_code = address_parts[4]
+        search_queries.append(f"{city}, {state} {zip_code}")
+
+    # 4. Try city + state.
+    if len(address_parts) >= 3:
+        city = address_parts[1]
+        state = address_parts[2]
+        search_queries.append(f"{city}, {state}")
+
+    search_queries = list(dict.fromkeys(search_queries))
+
+    for query in search_queries:
+        response = requests.get(
+            "https://nominatim.openstreetmap.org/search",
+            params={
+                "q": query,
+                "format": "json",
+                "limit": 1,
+                "countrycodes": "us",
+                "addressdetails": 1,
+            },
+            headers={
+                "User-Agent": "nearby-now-local-dev/1.0",
+            },
+            timeout=10,
+        )
+
+        if response.status_code != 200:
+            continue
+
+        results = response.json()
+
+        if results:
+            first_result = results[0]
+
+            return {
+                "latitude": float(first_result["lat"]),
+                "longitude": float(first_result["lon"]),
+                "matched_address": first_result.get("display_name", query),
+                "searched_query": query,
+            }
+
+    raise HTTPException(
+        status_code=404,
+        detail=f"Address not found. Tried: {search_queries}",
+    )
 
 
 # --------------------
@@ -252,7 +376,8 @@ def get_current_user(
 
 @app.get("/events", response_model=List[schemas.Event])
 def get_events(db: Session = Depends(get_db)):
-    return db.query(EventDB).all()   
+    return db.query(EventDB).all()
+
 
 @app.get("/my-events/{owner_id}", response_model=List[schemas.Event])
 def get_my_events(
@@ -305,67 +430,6 @@ def create_event(
 
     return new_event
 
-@app.get("/events/{event_id}/save-count")
-def get_event_save_count(
-    event_id: str,
-    db: Session = Depends(get_db),
-):
-    event = db.query(EventDB).filter(EventDB.id == event_id).first()
-
-    if event is None:
-        raise HTTPException(status_code=404, detail="Event not found")
-
-    save_count = db.query(SavedEventDB).filter(
-        SavedEventDB.event_id == event_id
-    ).count()
-
-    return {
-        "event_id": event_id,
-        "save_count": save_count,
-    }
-
-@app.post("/events/{event_id}/view")
-def add_event_view(
-    event_id: str,
-    db: Session = Depends(get_db),
-):
-    event = db.query(EventDB).filter(EventDB.id == event_id).first()
-
-    if event is None:
-        raise HTTPException(status_code=404, detail="Event not found")
-
-    event.views = (event.views or 0) + 1
-
-    db.commit()
-    db.refresh(event)
-
-    return {
-        "event_id": event_id,
-        "views": event.views,
-    }
-
-
-@app.delete("/events/{event_id}")
-def delete_event(event_id: str, db: Session = Depends(get_db)):
-    event = db.query(EventDB).filter(EventDB.id == event_id).first()
-    if event is None:
-        raise HTTPException(status_code=404, detail="Event not found")
-    
-    
-
-    # remove related reviews 
-    db.query(ReviewDB).filter(ReviewDB.event_id == event_id).delete()
-    #Remove from saved list 
-    db.query(SavedEventDB).filter(
-        SavedEventDB.event_id == event_id
-    ).delete() 
-
-    #then delete the event and commit
-    db.delete(event)
-    db.commit()
-
-    return {"message": "Event deleted"}
-   
 
 @app.put("/events/{event_id}", response_model=schemas.Event)
 def update_event(
@@ -376,7 +440,10 @@ def update_event(
     event = db.query(EventDB).filter(EventDB.id == event_id).first()
 
     if event is None:
-        raise HTTPException(status_code=404, detail="Event not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Event not found",
+        )
 
     full_location = ", ".join(
         part for part in [
@@ -410,6 +477,34 @@ def update_event(
 
     return event
 
+
+@app.delete("/events/{event_id}")
+def delete_event(
+    event_id: str,
+    db: Session = Depends(get_db),
+):
+    event = db.query(EventDB).filter(EventDB.id == event_id).first()
+
+    if event is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Event not found",
+        )
+
+    db.query(ReviewDB).filter(
+        ReviewDB.event_id == event_id
+    ).delete()
+
+    db.query(SavedEventDB).filter(
+        SavedEventDB.event_id == event_id
+    ).delete()
+
+    db.delete(event)
+    db.commit()
+
+    return {"message": "Event deleted"}
+
+
 @app.get("/external-events")
 def get_external_events(
     lat: float,
@@ -424,21 +519,139 @@ def get_external_events(
         keyword=keyword,
     )
 
+
+# --------------------
+# Analytics Endpoints
+# --------------------
+
+@app.get("/events/{event_id}/save-count")
+def get_event_save_count(
+    event_id: str,
+    db: Session = Depends(get_db),
+):
+    event = db.query(EventDB).filter(EventDB.id == event_id).first()
+
+    if event is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Event not found",
+        )
+
+    save_count = db.query(SavedEventDB).filter(
+        SavedEventDB.event_id == event_id
+    ).count()
+
+    return {
+        "event_id": event_id,
+        "save_count": save_count,
+    }
+
+
+@app.post("/events/{event_id}/view")
+def add_event_view(
+    event_id: str,
+    db: Session = Depends(get_db),
+):
+    event = db.query(EventDB).filter(EventDB.id == event_id).first()
+
+    if event is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Event not found",
+        )
+
+    event.views = (event.views or 0) + 1
+
+    db.commit()
+    db.refresh(event)
+
+    return {
+        "event_id": event_id,
+        "views": event.views,
+    }
+
+
+@app.get("/events/{event_id}/analytics")
+def get_event_analytics(
+    event_id: str,
+    db: Session = Depends(get_db),
+):
+    event = db.query(EventDB).filter(EventDB.id == event_id).first()
+
+    if event is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Event not found",
+        )
+
+    save_count = db.query(SavedEventDB).filter(
+        SavedEventDB.event_id == event_id
+    ).count()
+
+    return {
+        "event_id": event_id,
+        "views": event.views or 0,
+        "save_count": save_count,
+    }
+
+
+@app.get("/my-events/{owner_id}/analytics")
+def get_business_analytics(
+    owner_id: str,
+    db: Session = Depends(get_db),
+):
+    events = db.query(EventDB).filter(
+        EventDB.owner_id == owner_id
+    ).all()
+
+    event_ids = [event.id for event in events]
+
+    total_saves = 0
+
+    if event_ids:
+        total_saves = db.query(SavedEventDB).filter(
+            SavedEventDB.event_id.in_(event_ids)
+        ).count()
+
+    total_views = sum((event.views or 0) for event in events)
+
+    return {
+        "owner_id": owner_id,
+        "total_events": len(events),
+        "total_views": total_views,
+        "total_saves": total_saves,
+    }
+
+
 # --------------------
 # Review Endpoints
 # --------------------
 
 @app.get("/events/{event_id}/reviews", response_model=List[schemas.Review])
-def get_reviews(event_id: str, db: Session = Depends(get_db)):
-    return db.query(ReviewDB).filter(ReviewDB.event_id == event_id).all()
+def get_reviews(
+    event_id: str,
+    db: Session = Depends(get_db),
+):
+    return db.query(ReviewDB).filter(
+        ReviewDB.event_id == event_id
+    ).all()
 
 
 @app.post("/events/{event_id}/reviews", response_model=schemas.Review)
-def create_review(event_id: str, review: schemas.ReviewCreate, db: Session = Depends(get_db)):
-    #need to check if the event exist first 
-    event_exists = db.query(EventDB).filter(EventDB.id == event_id).first()
+def create_review(
+    event_id: str,
+    review: schemas.ReviewCreate,
+    db: Session = Depends(get_db),
+):
+    event_exists = db.query(EventDB).filter(
+        EventDB.id == event_id
+    ).first()
+
     if event_exists is None:
-        raise HTTPException(status_code=404, detail="Event not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Event not found",
+        )
 
     new_review = ReviewDB(
         id=str(uuid4()),
@@ -451,6 +664,7 @@ def create_review(event_id: str, review: schemas.ReviewCreate, db: Session = Dep
     db.add(new_review)
     db.commit()
     db.refresh(new_review)
+
     return new_review
 
 
@@ -473,7 +687,10 @@ def create_saved_event(
     ).first()
 
     if event is None:
-        raise HTTPException(status_code=404, detail="Event not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Event not found",
+        )
 
     already_saved = db.query(SavedEventDB).filter(
         SavedEventDB.event_id == saved_event.event_id,
@@ -481,7 +698,10 @@ def create_saved_event(
     ).first()
 
     if already_saved is not None:
-        raise HTTPException(status_code=400, detail="Event already saved")
+        raise HTTPException(
+            status_code=400,
+            detail="Event already saved",
+        )
 
     new_saved_event = SavedEventDB(
         id=str(uuid4()),
@@ -506,7 +726,10 @@ def delete_saved_event(
     ).first()
 
     if saved_event is None:
-        raise HTTPException(status_code=404, detail="Saved event not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Saved event not found",
+        )
 
     db.delete(saved_event)
     db.commit()

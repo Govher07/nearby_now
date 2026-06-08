@@ -45,6 +45,7 @@ class EventCreate(BaseModel):
 
 class Event(EventCreate):
     id: str
+    views: int = 0
 
     class Config:
         from_attributes = True
