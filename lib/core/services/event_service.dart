@@ -119,7 +119,7 @@ class EventService {
   try {
     internalEvents = await fetchEvents();
   } catch (error) {
-    print('Local events failed: $error');
+    debugPrint('Local events failed: $error');
   }
 
   try {
@@ -142,7 +142,7 @@ class EventService {
       userLongitude: position.longitude,
     );
   } catch (error) {
-    print('External events or location failed: $error');
+    debugPrint('External events or location failed: $error');
 
     return internalEvents;
   }

@@ -290,7 +290,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     }
 
     return DropdownButtonFormField<String>(
-      value: selectedCategory,
+      initialValue: selectedCategory,
       decoration: const InputDecoration(
         labelText: 'Category',
         border: OutlineInputBorder(),
