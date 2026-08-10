@@ -1,68 +1,72 @@
-from pydantic import BaseModel
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class UserCreate(BaseModel):
-    name: str
-    email: str
-    password: str
-    role: str
+    name: str = Field(min_length=2, max_length=100)
+    email: EmailStr
+    password: str = Field(min_length=8, max_length=72)
+    role: Literal["event_seeker", "business_owner"]
 
 
 class UserLogin(BaseModel):
-    email: str
-    password: str
+    email: EmailStr
+    password: str = Field(min_length=1, max_length=72)
 
 
 class User(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     name: str
     email: str
     role: str
 
-    class Config:
-        from_attributes = True
+class AuthResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: User
 
 
 class EventCreate(BaseModel):
-    title: str
-    description: str
+    title: str = Field(min_length=2, max_length=255)
+    description: str = Field(min_length=2, max_length=1000)
     location: str | None = None
     category: str
     date: str
     time: str
-    distance: float = 0.5
+    distance: float = Field(default=0.5, ge=0)
     address_line: str | None = None
     city: str | None = None
     state: str | None = None
     country: str | None = None
     zip_code: str | None = None
-    latitude: float | None = None
-    longitude: float | None = None
+    latitude: float | None = Field(default=None, ge=-90, le=90)
+    longitude: float | None = Field(default=None, ge=-180, le=180)
     owner_id: str | None = None
     image_url: str | None = None
     source: str | None = "nearby_now"
 
 
 class Event(EventCreate):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     views: int = 0
 
-    class Config:
-        from_attributes = True
-
 
 class ReviewCreate(BaseModel):
-    rating: int
-    comment: str = ""
+    rating: int = Field(ge=1, le=5)
+    comment: str = Field(default="", max_length=1000)
     user_id: str | None = None
 
 
 class Review(ReviewCreate):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     event_id: str
-
-    class Config:
-        from_attributes = True
 
 
 class SavedEventCreate(BaseModel):
@@ -71,7 +75,6 @@ class SavedEventCreate(BaseModel):
 
 
 class SavedEvent(SavedEventCreate):
-    id: str
+    model_config = ConfigDict(from_attributes=True)
 
-    class Config:
-        from_attributes = True
+    id: str

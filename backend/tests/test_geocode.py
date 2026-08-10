@@ -74,5 +74,5 @@ def test_geocode_service_failure(monkeypatch):
         },
     )
 
-    assert response.status_code == 500
+    assert response.status_code == 502
     assert "Geocoding service failed" in response.text

@@ -6,34 +6,95 @@ import os
 
 import requests
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query, status
+from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 import schemas
 from database.database import Base, engine, get_db
 from database.models import EventDB, ReviewDB, SavedEventDB, UserDB
-from security import hash_password, looks_like_bcrypt_hash, verify_password
+from security import (
+    create_access_token,
+    decode_access_token,
+    hash_password,
+    verify_password,
+)
 
 
 load_dotenv()
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
+app = FastAPI(
+    title="Nearby Now API",
+    description="API for discovering, creating, reviewing, and saving local events.",
+    version="1.0.0",
+)
+
+allowed_origins = [
+    origin.strip()
+    for origin in os.getenv(
+        "ALLOWED_ORIGINS",
+        "http://localhost:3000,http://localhost:8080",
+    ).split(",")
+    if origin.strip()
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
 
 # --------------------
 # Helpers
 # --------------------
+
+def get_authenticated_user(
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db),
+) -> UserDB:
+    user_id = decode_access_token(token)
+    if user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired access token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    user = db.query(UserDB).filter(UserDB.id == user_id).first()
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User no longer exists",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return user
+
+
+def require_business_owner(
+    current_user: UserDB = Depends(get_authenticated_user),
+) -> UserDB:
+    if current_user.role != "business_owner":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Business owner account required",
+        )
+    return current_user
+
+
+def require_same_user(requested_user_id: str, current_user: UserDB):
+    if requested_user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You cannot access another user's data",
+        )
 
 def calculate_distance_miles(
     lat1: float,
@@ -202,13 +263,13 @@ def root():
 # Auth
 # --------------------
 
-@app.post("/register", response_model=schemas.User)
+@app.post("/register", response_model=schemas.AuthResponse, status_code=201)
 def register_user(
     user: schemas.UserCreate,
     db: Session = Depends(get_db),
 ):
     existing_user = db.query(UserDB).filter(
-        UserDB.email == user.email
+        UserDB.email == user.email.lower()
     ).first()
 
     if existing_user is not None:
@@ -220,7 +281,7 @@ def register_user(
     new_user = UserDB(
         id=str(uuid4()),
         name=user.name,
-        email=user.email,
+        email=user.email.lower(),
         password_hash=hash_password(user.password),
         role=user.role,
     )
@@ -229,16 +290,19 @@ def register_user(
     db.commit()
     db.refresh(new_user)
 
-    return new_user
+    return {
+        "access_token": create_access_token(new_user.id),
+        "user": new_user,
+    }
 
 
-@app.post("/login", response_model=schemas.User)
+@app.post("/login", response_model=schemas.AuthResponse)
 def login_user(
     user: schemas.UserLogin,
     db: Session = Depends(get_db),
 ):
     existing_user = db.query(UserDB).filter(
-        UserDB.email == user.email
+        UserDB.email == user.email.lower()
     ).first()
 
     if existing_user is None:
@@ -249,20 +313,7 @@ def login_user(
 
     stored_password = existing_user.password_hash
 
-    if looks_like_bcrypt_hash(stored_password):
-        password_is_valid = verify_password(
-            user.password,
-            stored_password,
-        )
-    else:
-        # Backward compatibility for old test users stored as plain text.
-        password_is_valid = user.password == stored_password
-
-        # If old plain password is correct, upgrade it to bcrypt hash.
-        if password_is_valid:
-            existing_user.password_hash = hash_password(user.password)
-            db.commit()
-            db.refresh(existing_user)
+    password_is_valid = verify_password(user.password, stored_password)
 
     if not password_is_valid:
         raise HTTPException(
@@ -270,14 +321,19 @@ def login_user(
             detail="Invalid email or password",
         )
 
-    return existing_user
+    return {
+        "access_token": create_access_token(existing_user.id),
+        "user": existing_user,
+    }
 
 
 @app.get("/me/{user_id}", response_model=schemas.User)
-def get_current_user(
+def get_user_profile(
     user_id: str,
     db: Session = Depends(get_db),
+    authenticated_user: UserDB = Depends(get_authenticated_user),
 ):
+    require_same_user(user_id, authenticated_user)
     user = db.query(UserDB).filter(UserDB.id == user_id).first()
 
     if user is None:
@@ -333,6 +389,8 @@ def geocode_address(address: str = Query(...)):
 
     search_queries = list(dict.fromkeys(search_queries))
 
+    service_failed = False
+
     for query in search_queries:
         response = requests.get(
             "https://nominatim.openstreetmap.org/search",
@@ -350,6 +408,7 @@ def geocode_address(address: str = Query(...)):
         )
 
         if response.status_code != 200:
+            service_failed = True
             continue
 
         results = response.json()
@@ -363,6 +422,12 @@ def geocode_address(address: str = Query(...)):
                 "matched_address": first_result.get("display_name", query),
                 "searched_query": query,
             }
+
+    if service_failed:
+        raise HTTPException(
+            status_code=502,
+            detail="Geocoding service failed",
+        )
 
     raise HTTPException(
         status_code=404,
@@ -383,7 +448,9 @@ def get_events(db: Session = Depends(get_db)):
 def get_my_events(
     owner_id: str,
     db: Session = Depends(get_db),
+    current_user: UserDB = Depends(require_business_owner),
 ):
+    require_same_user(owner_id, current_user)
     return db.query(EventDB).filter(
         EventDB.owner_id == owner_id
     ).all()
@@ -393,6 +460,7 @@ def get_my_events(
 def create_event(
     event: schemas.EventCreate,
     db: Session = Depends(get_db),
+    current_user: UserDB = Depends(require_business_owner),
 ):
     full_location = ", ".join(
         part for part in [
@@ -416,7 +484,7 @@ def create_event(
         distance=event.distance,
         latitude=event.latitude,
         longitude=event.longitude,
-        owner_id=event.owner_id,
+        owner_id=current_user.id,
         address_line=event.address_line,
         city=event.city,
         state=event.state,
@@ -436,6 +504,7 @@ def update_event(
     event_id: str,
     updated_event: schemas.EventCreate,
     db: Session = Depends(get_db),
+    current_user: UserDB = Depends(require_business_owner),
 ):
     event = db.query(EventDB).filter(EventDB.id == event_id).first()
 
@@ -444,6 +513,9 @@ def update_event(
             status_code=404,
             detail="Event not found",
         )
+
+    if event.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You do not own this event")
 
     full_location = ", ".join(
         part for part in [
@@ -465,7 +537,6 @@ def update_event(
     event.distance = updated_event.distance
     event.latitude = updated_event.latitude
     event.longitude = updated_event.longitude
-    event.owner_id = updated_event.owner_id
     event.address_line = updated_event.address_line
     event.city = updated_event.city
     event.state = updated_event.state
@@ -482,6 +553,7 @@ def update_event(
 def delete_event(
     event_id: str,
     db: Session = Depends(get_db),
+    current_user: UserDB = Depends(require_business_owner),
 ):
     event = db.query(EventDB).filter(EventDB.id == event_id).first()
 
@@ -490,6 +562,9 @@ def delete_event(
             status_code=404,
             detail="Event not found",
         )
+
+    if event.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You do not own this event")
 
     db.query(ReviewDB).filter(
         ReviewDB.event_id == event_id
@@ -509,7 +584,7 @@ def delete_event(
 def get_external_events(
     lat: float,
     lng: float,
-    radius: int = 25,
+    radius: int = Query(default=25, ge=1, le=100),
     keyword: str | None = None,
 ):
     return fetch_ticketmaster_events(
@@ -575,6 +650,7 @@ def add_event_view(
 def get_event_analytics(
     event_id: str,
     db: Session = Depends(get_db),
+    current_user: UserDB = Depends(require_business_owner),
 ):
     event = db.query(EventDB).filter(EventDB.id == event_id).first()
 
@@ -583,6 +659,9 @@ def get_event_analytics(
             status_code=404,
             detail="Event not found",
         )
+
+    if event.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You do not own this event")
 
     save_count = db.query(SavedEventDB).filter(
         SavedEventDB.event_id == event_id
@@ -599,7 +678,9 @@ def get_event_analytics(
 def get_business_analytics(
     owner_id: str,
     db: Session = Depends(get_db),
+    current_user: UserDB = Depends(require_business_owner),
 ):
+    require_same_user(owner_id, current_user)
     events = db.query(EventDB).filter(
         EventDB.owner_id == owner_id
     ).all()
@@ -642,6 +723,7 @@ def create_review(
     event_id: str,
     review: schemas.ReviewCreate,
     db: Session = Depends(get_db),
+    current_user: UserDB = Depends(get_authenticated_user),
 ):
     event_exists = db.query(EventDB).filter(
         EventDB.id == event_id
@@ -656,7 +738,7 @@ def create_review(
     new_review = ReviewDB(
         id=str(uuid4()),
         event_id=event_id,
-        user_id=review.user_id,
+        user_id=current_user.id,
         rating=review.rating,
         comment=review.comment,
     )
@@ -673,14 +755,20 @@ def create_review(
 # --------------------
 
 @app.get("/saved-events", response_model=List[schemas.SavedEvent])
-def get_saved_events(db: Session = Depends(get_db)):
-    return db.query(SavedEventDB).all()
+def get_saved_events(
+    db: Session = Depends(get_db),
+    current_user: UserDB = Depends(get_authenticated_user),
+):
+    return db.query(SavedEventDB).filter(
+        SavedEventDB.user_id == current_user.id
+    ).all()
 
 
 @app.post("/saved-events", response_model=schemas.SavedEvent)
 def create_saved_event(
     saved_event: schemas.SavedEventCreate,
     db: Session = Depends(get_db),
+    current_user: UserDB = Depends(get_authenticated_user),
 ):
     event = db.query(EventDB).filter(
         EventDB.id == saved_event.event_id
@@ -694,7 +782,7 @@ def create_saved_event(
 
     already_saved = db.query(SavedEventDB).filter(
         SavedEventDB.event_id == saved_event.event_id,
-        SavedEventDB.user_id == saved_event.user_id,
+        SavedEventDB.user_id == current_user.id,
     ).first()
 
     if already_saved is not None:
@@ -706,7 +794,7 @@ def create_saved_event(
     new_saved_event = SavedEventDB(
         id=str(uuid4()),
         event_id=saved_event.event_id,
-        user_id=saved_event.user_id,
+        user_id=current_user.id,
     )
 
     db.add(new_saved_event)
@@ -720,9 +808,11 @@ def create_saved_event(
 def delete_saved_event(
     event_id: str,
     db: Session = Depends(get_db),
+    current_user: UserDB = Depends(get_authenticated_user),
 ):
     saved_event = db.query(SavedEventDB).filter(
-        SavedEventDB.event_id == event_id
+        SavedEventDB.event_id == event_id,
+        SavedEventDB.user_id == current_user.id,
     ).first()
 
     if saved_event is None:

@@ -8,6 +8,7 @@ AppUser? currentUser;
 
 class CurrentUserStorage {
   static const String userKey = 'current_user';
+  static const String tokenKey = 'access_token';
 
   static Future<void> saveUser(AppUser user) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -24,8 +25,10 @@ class CurrentUserStorage {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
     final String? userJson = prefs.getString(userKey);
+    final String? accessToken = prefs.getString(tokenKey);
 
-    if (userJson == null) {
+    if (userJson == null || accessToken == null) {
+      currentUser = null;
       return null;
     }
 
@@ -40,7 +43,33 @@ class CurrentUserStorage {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
     await prefs.remove(userKey);
+    await prefs.remove(tokenKey);
 
     currentUser = null;
+  }
+
+  static Future<void> saveAccessToken(String token) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString(tokenKey, token);
+  }
+
+  static Future<String?> loadAccessToken() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString(tokenKey);
+  }
+
+  static Future<Map<String, String>> authorizationHeaders({
+    bool includeJsonContentType = false,
+  }) async {
+    final String? token = await loadAccessToken();
+    final Map<String, String> headers = {};
+
+    if (includeJsonContentType) {
+      headers['Content-Type'] = 'application/json';
+    }
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+    return headers;
   }
 }

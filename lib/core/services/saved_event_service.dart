@@ -1,15 +1,20 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/saved_event.dart';
+import '../config/api_config.dart';
+import '../data/current_user.dart';
 
 
 class SavedEventService {
-  static const String baseUrl = 'http://127.0.0.1:8000';
+  static const String baseUrl = ApiConfig.baseUrl;
 
   static Future<List<SavedEvent>> fetchSavedEvents() async {
     final Uri url = Uri.parse('$baseUrl/saved-events');
 
-    final response = await http.get(url);
+    final response = await http.get(
+      url,
+      headers: await CurrentUserStorage.authorizationHeaders(),
+    );
 
     if (response.statusCode != 200) {
       throw Exception('Failed to load saved events');
@@ -27,9 +32,9 @@ class SavedEventService {
 
     final response = await http.post(
       url,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: await CurrentUserStorage.authorizationHeaders(
+        includeJsonContentType: true,
+      ),
       body: jsonEncode({
         'event_id': eventId,
       }),
@@ -47,7 +52,10 @@ class SavedEventService {
   static Future<void> removeSavedEvent(String eventId) async {
     final Uri url = Uri.parse('$baseUrl/saved-events/$eventId');
 
-    final response = await http.delete(url);
+    final response = await http.delete(
+      url,
+      headers: await CurrentUserStorage.authorizationHeaders(),
+    );
 
     if (response.statusCode != 200) {
       throw Exception('Failed to remove saved event');
