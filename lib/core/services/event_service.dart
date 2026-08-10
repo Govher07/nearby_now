@@ -7,6 +7,7 @@ import '../models/event.dart';
 import '../config/api_config.dart';
 import '../data/current_user.dart';
 import 'location_service.dart';
+import 'package:flutter/foundation.dart';
 
 class EventService {
   static const String baseUrl = ApiConfig.baseUrl;

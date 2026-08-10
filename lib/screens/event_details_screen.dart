@@ -610,7 +610,7 @@ $cleanDescription
               destinationAddress: widget.event.location,
             );
           } catch (error) {
-            if (!context.mounted) return;
+            if (!mounted) return;
 
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
