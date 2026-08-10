@@ -27,7 +27,7 @@ def test_geocode_address_success(monkeypatch):
             ],
         )
 
-    monkeypatch.setattr("main.requests.get", fake_get)
+    monkeypatch.setattr("services.geocoding_service.requests.get", fake_get)
 
     response = client.get(
         "/geocode",
@@ -48,7 +48,7 @@ def test_geocode_address_not_found(monkeypatch):
     def fake_get(url, params=None, headers=None, timeout=None):
         return FakeResponse(200, [])
 
-    monkeypatch.setattr("main.requests.get", fake_get)
+    monkeypatch.setattr("services.geocoding_service.requests.get", fake_get)
 
     response = client.get(
         "/geocode",
@@ -65,7 +65,7 @@ def test_geocode_service_failure(monkeypatch):
     def fake_get(url, params=None, headers=None, timeout=None):
         return FakeResponse(500, {})
 
-    monkeypatch.setattr("main.requests.get", fake_get)
+    monkeypatch.setattr("services.geocoding_service.requests.get", fake_get)
 
     response = client.get(
         "/geocode",
