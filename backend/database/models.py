@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Float, ForeignKey, Integer, String
+from sqlalchemy import Column, Float, ForeignKey, Integer, String, UniqueConstraint
 
 from database.database import Base
 
@@ -34,9 +34,6 @@ class EventDB(Base):
     image_url = Column(String(1000), nullable=True)
     source = Column(String(100), default="nearby_now")
     views = Column(Integer, default=0)
-    image_url = Column(String(1000), nullable=True)
-    source = Column(String(100), default="nearby_now")
-    views = Column(Integer, default=0)
 
 
 class ReviewDB(Base):
@@ -51,6 +48,9 @@ class ReviewDB(Base):
 
 class SavedEventDB(Base):
     __tablename__ = "saved_events"
+    __table_args__ = (
+        UniqueConstraint("event_id", "user_id", name="uq_saved_event_user"),
+    )
 
     id = Column(String(100), primary_key=True, index=True)
     event_id = Column(String(100), ForeignKey("events.id"), nullable=False)

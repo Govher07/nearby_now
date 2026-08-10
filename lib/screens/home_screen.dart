@@ -531,7 +531,7 @@ class _HomeScreenState extends State<HomeScreen> {
             color: Theme.of(context).colorScheme.surface,
             border: Border(
               bottom: BorderSide(
-                color: Theme.of(context).dividerColor.withOpacity(0.3),
+                color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
               ),
             ),
           ),
@@ -693,7 +693,7 @@ class _HomeScreenState extends State<HomeScreen> {
         color: Theme.of(context).colorScheme.surface,
         border: Border(
           right: BorderSide(
-            color: Theme.of(context).dividerColor.withOpacity(0.3),
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
           ),
         ),
       ),

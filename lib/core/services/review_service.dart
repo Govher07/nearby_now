@@ -2,9 +2,11 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import '../models/review.dart';
+import '../config/api_config.dart';
+import '../data/current_user.dart';
 
 class ReviewService {
-  static const String baseUrl = 'http://127.0.0.1:8000';
+  static const String baseUrl = ApiConfig.baseUrl;
 
   // GET /events/{event_id}/reviews
   static Future<List<Review>> fetchReviews(String eventId) async {
@@ -32,9 +34,9 @@ class ReviewService {
 
     final response = await http.post(
       url,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: await CurrentUserStorage.authorizationHeaders(
+        includeJsonContentType: true,
+      ),
       body: jsonEncode(review.toJson()),
     );
 

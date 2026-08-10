@@ -4,10 +4,13 @@ import 'dart:math';
 import 'package:http/http.dart' as http;
 
 import '../models/event.dart';
+import '../config/api_config.dart';
+import '../data/current_user.dart';
 import 'location_service.dart';
+import 'package:flutter/foundation.dart';
 
 class EventService {
-  static const String baseUrl = 'http://127.0.0.1:8000';
+  static const String baseUrl = ApiConfig.baseUrl;
 
   // GET /events
   static Future<List<Event>> fetchEvents() async {
@@ -116,7 +119,7 @@ class EventService {
   try {
     internalEvents = await fetchEvents();
   } catch (error) {
-    print('Local events failed: $error');
+    debugPrint('Local events failed: $error');
   }
 
   try {
@@ -139,7 +142,7 @@ class EventService {
       userLongitude: position.longitude,
     );
   } catch (error) {
-    print('External events or location failed: $error');
+    debugPrint('External events or location failed: $error');
 
     return internalEvents;
   }
@@ -149,11 +152,12 @@ class EventService {
   static Future<Event> createEvent(Event event) async {
     final Uri url = Uri.parse('$baseUrl/events');
 
+    final headers = await CurrentUserStorage.authorizationHeaders(
+      includeJsonContentType: true,
+    );
     final response = await http.post(
       url,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: headers,
       body: jsonEncode(event.toJson()),
     );
 
@@ -170,7 +174,10 @@ class EventService {
   static Future<void> deleteEvent(String eventId) async {
     final Uri url = Uri.parse('$baseUrl/events/$eventId');
 
-    final response = await http.delete(url);
+    final response = await http.delete(
+      url,
+      headers: await CurrentUserStorage.authorizationHeaders(),
+    );
 
     if (response.statusCode != 200) {
       throw Exception('Failed to delete event: ${response.body}');
@@ -181,7 +188,10 @@ class EventService {
   static Future<List<Event>> fetchMyEvents(String ownerId) async {
     final Uri url = Uri.parse('$baseUrl/my-events/$ownerId');
 
-    final response = await http.get(url);
+    final response = await http.get(
+      url,
+      headers: await CurrentUserStorage.authorizationHeaders(),
+    );
 
     if (response.statusCode != 200) {
       throw Exception('Failed to load my events: ${response.body}');
@@ -198,7 +208,10 @@ class EventService {
   static Future<Map<String, int>> fetchBusinessAnalytics(String ownerId) async {
     final Uri url = Uri.parse('$baseUrl/my-events/$ownerId/analytics');
 
-    final response = await http.get(url);
+    final response = await http.get(
+      url,
+      headers: await CurrentUserStorage.authorizationHeaders(),
+    );
 
     if (response.statusCode != 200) {
       throw Exception('Failed to load business analytics: ${response.body}');
@@ -251,7 +264,10 @@ class EventService {
   static Future<Map<String, dynamic>> fetchEventAnalytics(String eventId) async {
     final Uri url = Uri.parse('$baseUrl/events/$eventId/analytics');
 
-    final response = await http.get(url);
+    final response = await http.get(
+      url,
+      headers: await CurrentUserStorage.authorizationHeaders(),
+    );
 
     if (response.statusCode != 200) {
       throw Exception('Failed to load event analytics: ${response.body}');
@@ -269,9 +285,9 @@ class EventService {
 
     final response = await http.put(
       url,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: await CurrentUserStorage.authorizationHeaders(
+        includeJsonContentType: true,
+      ),
       body: jsonEncode(event.toJson()),
     );
 

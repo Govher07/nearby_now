@@ -3,9 +3,21 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../models/user.dart';
+import '../config/api_config.dart';
+import '../data/current_user.dart';
 
 class AuthService {
-  static const String baseUrl = 'http://127.0.0.1:8000';
+  static const String baseUrl = ApiConfig.baseUrl;
+
+  static Future<AppUser> _readAuthResponse(http.Response response) async {
+    final Map<String, dynamic> jsonData = jsonDecode(response.body);
+    final String token = jsonData['access_token'] as String;
+    final AppUser user = AppUser.fromJson(
+      jsonData['user'] as Map<String, dynamic>,
+    );
+    await CurrentUserStorage.saveAccessToken(token);
+    return user;
+  }
 
   static Future<AppUser> register({
     required String name,
@@ -32,9 +44,7 @@ class AuthService {
       throw Exception('Failed to register user');
     }
 
-    final Map<String, dynamic> jsonData = jsonDecode(response.body);
-
-    return AppUser.fromJson(jsonData);
+    return _readAuthResponse(response);
   }
 
   static Future<AppUser> login({
@@ -58,8 +68,6 @@ class AuthService {
       throw Exception('Invalid email or password');
     }
 
-    final Map<String, dynamic> jsonData = jsonDecode(response.body);
-
-    return AppUser.fromJson(jsonData);
+    return _readAuthResponse(response);
   }
 }
