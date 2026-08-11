@@ -25,37 +25,35 @@ The Flutter client combines community-created events with Ticketmaster listings,
 
 ## Screenshots
 
-### Choose your experience
-
-![Mode selection](docs/screenshots/01-mode-selection.png)
-
 ### Discover nearby events
 
-Nearby Now combines community-created events with Ticketmaster events and orders them by distance.
+Upcoming events from Nearby Now and Ticketmaster are combined and ordered by distance.
 
-![Event discovery](docs/screenshots/02-event-discovery.png)
+<img
+  src="docs/screenshots/02-event-discovery.png"
+  alt="Nearby Now event discovery"
+  width="100%"
+/>
 
-### Explore event details
+### Save local and Ticketmaster events
 
-View event information, location, reviews, directions, and saving options.
+Saved events remain available and are organized into upcoming and past sections.
 
-![Event details](docs/screenshots/03-event-details.png)
-
-### Save events
-
-Users can save both Nearby Now and Ticketmaster events. Saved events are separated into upcoming and past sections.
-
-![Saved events](docs/screenshots/04-saved-events.png)
+<img
+  src="docs/screenshots/03-saved-events.png"
+  alt="Upcoming and past saved events"
+  width="100%"
+/>
 
 ### Manage business events
 
-Business owners can create events and monitor views and saves.
+Business owners can view event information, edit details, delete events, and monitor reviews.
 
-![Business dashboard](docs/screenshots/05-business-dashboard.png)
-
-### Create an event
-
-![Create event](docs/screenshots/06-create-event.png)
+<img
+  src="docs/screenshots/04-business-event-details.png"
+  alt="Business owner event details"
+  width="100%"
+/>
 
 ## Technology
 
