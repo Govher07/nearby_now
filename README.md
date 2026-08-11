@@ -2,6 +2,12 @@
 
 Nearby Now is a full-stack event discovery application that helps people find nearby activities and helps local businesses publish events and understand audience engagement.
 
+<img
+  src="docs/screenshots/01-mode-selection.png"
+  alt="Nearby Now mode selection screen"
+  width="100%"
+/>
+
 The Flutter client combines community-created events with Ticketmaster listings, calculates distance from the user's location, displays events on a map, and supports saved events and reviews. Business accounts can create and manage events and view basic analytics such as views and saves.
 
 > This project is under active development. Authentication and deployment improvements are in progress; see [Current limitations](#current-limitations).
@@ -22,6 +28,38 @@ The Flutter client combines community-created events with Ticketmaster listings,
 - Create, edit, and delete events
 - Manage published events
 - View event and account-level view/save analytics
+
+## Screenshots
+
+### Discover nearby events
+
+Upcoming events from Nearby Now and Ticketmaster are combined and ordered by distance.
+
+<img
+  src="docs/screenshots/02-event-discovery.png"
+  alt="Nearby Now event discovery"
+  width="100%"
+/>
+
+### Save local and Ticketmaster events
+
+Saved events remain available and are organized into upcoming and past sections.
+
+<img
+  src="docs/screenshots/03-saved-events.png"
+  alt="Upcoming and past saved events"
+  width="100%"
+/>
+
+### Manage business events
+
+Business owners can view event information, edit details, delete events, and monitor reviews.
+
+<img
+  src="docs/screenshots/04-business-event-details.png"
+  alt="Business owner event details"
+  width="100%"
+/>
 
 ## Technology
 
