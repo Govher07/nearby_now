@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../core/data/current_user.dart';
 import '../core/services/auth_service.dart';
 import 'main_navigation_screen.dart';
 import 'register_screen.dart';
+
 
 class LoginScreen extends StatefulWidget {
   final String selectedRole;
@@ -58,6 +58,8 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       await CurrentUserStorage.saveUser(user, persist: rememberMe);
+
+      TextInput.finishAutofillContext();
 
       if (!mounted) return;
 
@@ -125,7 +127,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     controller: passwordController,
                     obscureText: true,
                     textInputAction: TextInputAction.done,
-                    autofillHints: const [AutofillHints.password],
+                    autofillHints: const [
+                      AutofillHints.password,
+                    ],
                     onSubmitted: (_) {
                       if (!isLoading) {
                         login();
