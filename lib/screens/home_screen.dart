@@ -135,9 +135,7 @@ class _HomeScreenState extends State<HomeScreen> {
       isScrollControlled: true,
       useSafeArea: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(24),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) {
         return StatefulBuilder(
@@ -337,10 +335,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Row(
       children: [
-        TextButton(
-          onPressed: openLoginScreen,
-          child: const Text('Sign In'),
-        ),
+        TextButton(onPressed: openLoginScreen, child: const Text('Sign In')),
         const SizedBox(width: 8),
         ElevatedButton(
           onPressed: openRegisterScreen,
@@ -354,9 +349,8 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => LoginScreen(
-          selectedRole: app_mode.selectedAppRole,
-        ),
+        builder: (context) =>
+            LoginScreen(selectedRole: app_mode.selectedAppRole),
       ),
     );
   }
@@ -365,9 +359,8 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => RegisterScreen(
-          selectedRole: app_mode.selectedAppRole,
-        ),
+        builder: (context) =>
+            RegisterScreen(selectedRole: app_mode.selectedAppRole),
       ),
     );
   }
@@ -456,10 +449,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
 
         Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 6,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           child: Row(
             children: [
               Text(
@@ -474,10 +464,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
 
         //buildGuestAuthBanner(),
-
-        Expanded(
-          child: buildEventsList(),
-        ),
+        Expanded(child: buildEventsList()),
       ],
     );
   }
@@ -487,9 +474,7 @@ class _HomeScreenState extends State<HomeScreen> {
       future: eventsFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
+          return const Center(child: CircularProgressIndicator());
         }
 
         if (snapshot.hasError) {
@@ -505,9 +490,7 @@ class _HomeScreenState extends State<HomeScreen> {
         final List<Event> filteredEvents = applyFilters(events);
 
         if (filteredEvents.isEmpty) {
-          return const Center(
-            child: Text('No events found.'),
-          );
+          return const Center(child: Text('No events found.'));
         }
 
         return ListView.builder(
@@ -539,19 +522,14 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               const Text(
                 'Nearby Now',
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
               ),
 
               const SizedBox(width: 32),
 
               const Text(
                 'Discover events near you',
-                style: TextStyle(
-                  fontSize: 15,
-                ),
+                style: TextStyle(fontSize: 15),
               ),
 
               const Spacer(),
@@ -612,11 +590,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: FutureBuilder<List<Event>>(
                     future: eventsFuture,
                     builder: (context, snapshot) {
-                      if (snapshot.connectionState ==
-                          ConnectionState.waiting) {
-                        return const Center(
-                          child: CircularProgressIndicator(),
-                        );
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
                       }
 
                       if (snapshot.hasError) {
@@ -632,9 +607,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       final List<Event> filteredEvents = applyFilters(events);
 
                       if (filteredEvents.isEmpty) {
-                        return const Center(
-                          child: Text('No events found.'),
-                        );
+                        return const Center(child: Text('No events found.'));
                       }
 
                       return Column(
@@ -655,11 +628,11 @@ class _HomeScreenState extends State<HomeScreen> {
                               itemCount: filteredEvents.length,
                               gridDelegate:
                                   const SliverGridDelegateWithMaxCrossAxisExtent(
-                                maxCrossAxisExtent: 420,
-                                mainAxisExtent: 380,
-                                crossAxisSpacing: 18,
-                                mainAxisSpacing: 18,
-                              ),
+                                    maxCrossAxisExtent: 420,
+                                    mainAxisExtent: 380,
+                                    crossAxisSpacing: 18,
+                                    mainAxisSpacing: 18,
+                                  ),
                               itemBuilder: (context, index) {
                                 return ClipRRect(
                                   borderRadius: BorderRadius.circular(16),
@@ -704,10 +677,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const Expanded(
                 child: Text(
                   'Filters',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
               ),
               IconButton(
@@ -726,10 +696,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
           const Text(
             'When?',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
 
           const SizedBox(height: 10),
@@ -770,10 +737,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
           const Text(
             'Category',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
 
           const SizedBox(height: 10),
@@ -824,134 +788,138 @@ class _HomeScreenState extends State<HomeScreen> {
       },
     );
   }
-DateTime? parseEventStartDateTime(String dateValue, String timeValue) {
-  try {
-    final DateTime? parsedDate = parseEventDate(dateValue);
 
-    if (parsedDate == null) {
-      return null;
-    }
+  DateTime? parseEventStartDateTime(String dateValue, String timeValue) {
+    try {
+      final DateTime? parsedDate = parseEventDate(dateValue);
 
-    final String cleanedTime = timeValue.trim().toUpperCase();
-
-    if (cleanedTime.isEmpty || cleanedTime == 'UNKNOWN TIME') {
-      return null;
-    }
-
-    // Supports: 9:00 PM, 09:00 PM, 18:00, 18:00:00
-    final RegExp amPmPattern = RegExp(
-      r'^(\d{1,2}):(\d{2})\s*(AM|PM)$',
-    );
-
-    final RegExp twentyFourHourPattern = RegExp(
-      r'^(\d{1,2}):(\d{2})(?::\d{2})?$',
-    );
-
-    int hour;
-    int minute;
-
-    final Match? amPmMatch = amPmPattern.firstMatch(cleanedTime);
-
-    if (amPmMatch != null) {
-      hour = int.parse(amPmMatch.group(1)!);
-      minute = int.parse(amPmMatch.group(2)!);
-
-      final String period = amPmMatch.group(3)!;
-
-      if (period == 'PM' && hour != 12) {
-        hour += 12;
-      }
-
-      if (period == 'AM' && hour == 12) {
-        hour = 0;
-      }
-    } else {
-      final Match? twentyFourHourMatch =
-          twentyFourHourPattern.firstMatch(cleanedTime);
-
-      if (twentyFourHourMatch == null) {
+      if (parsedDate == null) {
         return null;
       }
 
-      hour = int.parse(twentyFourHourMatch.group(1)!);
-      minute = int.parse(twentyFourHourMatch.group(2)!);
+      final String cleanedTime = timeValue.trim().toUpperCase();
+
+      if (cleanedTime.isEmpty || cleanedTime == 'UNKNOWN TIME') {
+        return null;
+      }
+
+      // Supports: 9:00 PM, 09:00 PM, 18:00, 18:00:00
+      final RegExp amPmPattern = RegExp(r'^(\d{1,2}):(\d{2})\s*(AM|PM)$');
+
+      final RegExp twentyFourHourPattern = RegExp(
+        r'^(\d{1,2}):(\d{2})(?::\d{2})?$',
+      );
+
+      int hour;
+      int minute;
+
+      final Match? amPmMatch = amPmPattern.firstMatch(cleanedTime);
+
+      if (amPmMatch != null) {
+        hour = int.parse(amPmMatch.group(1)!);
+        minute = int.parse(amPmMatch.group(2)!);
+
+        final String period = amPmMatch.group(3)!;
+
+        if (period == 'PM' && hour != 12) {
+          hour += 12;
+        }
+
+        if (period == 'AM' && hour == 12) {
+          hour = 0;
+        }
+      } else {
+        final Match? twentyFourHourMatch = twentyFourHourPattern.firstMatch(
+          cleanedTime,
+        );
+
+        if (twentyFourHourMatch == null) {
+          return null;
+        }
+
+        hour = int.parse(twentyFourHourMatch.group(1)!);
+        minute = int.parse(twentyFourHourMatch.group(2)!);
+      }
+
+      return DateTime(
+        parsedDate.year,
+        parsedDate.month,
+        parsedDate.day,
+        hour,
+        minute,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  int eventPriority(Event event) {
+    final DateTime now = DateTime.now();
+
+    final DateTime? eventStart = parseEventStartDateTime(
+      event.date,
+      event.time,
+    );
+
+    final bool isVeryClose = event.distance <= 2.0;
+    final bool isNearby = event.distance <= 10.0;
+
+    bool isStartingSoon = false;
+    bool isToday = false;
+
+    if (eventStart != null) {
+      final int minutesUntilStart = eventStart.difference(now).inMinutes;
+
+      isStartingSoon = minutesUntilStart >= 0 && minutesUntilStart <= 60;
+
+      isToday = dateOnly(eventStart) == dateOnly(now);
     }
 
-    return DateTime(
-      parsedDate.year,
-      parsedDate.month,
-      parsedDate.day,
-      hour,
-      minute,
+    // Top group: very close and happening soon.
+    if (isVeryClose && isStartingSoon) {
+      return 0;
+    }
+
+    // Middle group: nearby or happening today.
+    if (isNearby && isToday) {
+      return 1;
+    }
+
+    // End group: everything else.
+    return 2;
+  }
+
+  int compareEventsByPriority(Event first, Event second) {
+    final bool firstHasLocation =
+        first.latitude != 0.0 || first.longitude != 0.0;
+
+    final bool secondHasLocation =
+        second.latitude != 0.0 || second.longitude != 0.0;
+
+    // Put events without valid coordinates at the end.
+    if (firstHasLocation != secondHasLocation) {
+      return firstHasLocation ? -1 : 1;
+    }
+
+    // Primary sorting: nearest event first.
+    final int distanceComparison = first.distance.compareTo(second.distance);
+
+    if (distanceComparison != 0) {
+      return distanceComparison;
+    }
+
+    // If distances are equal, show the earlier event first.
+    final DateTime? firstDate = parseEventStartDateTime(first.date, first.time);
+
+    final DateTime? secondDate = parseEventStartDateTime(
+      second.date,
+      second.time,
     );
-  } catch (_) {
-    return null;
-  }
-}
 
-int eventPriority(Event event) {
-  final DateTime now = DateTime.now();
+    if (firstDate != null && secondDate != null) {
+      return firstDate.compareTo(secondDate);
+    }
 
-  final DateTime? eventStart = parseEventStartDateTime(
-    event.date,
-    event.time,
-  );
-
-  final bool isVeryClose = event.distance <= 2.0;
-  final bool isNearby = event.distance <= 10.0;
-
-  bool isStartingSoon = false;
-  bool isToday = false;
-
-  if (eventStart != null) {
-    final int minutesUntilStart = eventStart.difference(now).inMinutes;
-
-    isStartingSoon = minutesUntilStart >= 0 && minutesUntilStart <= 60;
-
-    isToday = dateOnly(eventStart) == dateOnly(now);
-  }
-
-  // Top group: very close and happening soon.
-  if (isVeryClose && isStartingSoon) {
     return 0;
   }
-
-  // Middle group: nearby or happening today.
-  if (isNearby && isToday) {
-    return 1;
-  }
-
-  // End group: everything else.
-  return 2;
-}
-
-int compareEventsByPriority(Event first, Event second) {
-  final int firstPriority = eventPriority(first);
-  final int secondPriority = eventPriority(second);
-
-  if (firstPriority != secondPriority) {
-    return firstPriority.compareTo(secondPriority);
-  }
-
-  final DateTime? firstStart = parseEventStartDateTime(
-    first.date,
-    first.time,
-  );
-
-  final DateTime? secondStart = parseEventStartDateTime(
-    second.date,
-    second.time,
-  );
-
-  if (firstStart != null && secondStart != null) {
-    final int timeCompare = firstStart.compareTo(secondStart);
-
-    if (timeCompare != 0) {
-      return timeCompare;
-    }
-  }
-
-  return first.distance.compareTo(second.distance);
-}
-
 }

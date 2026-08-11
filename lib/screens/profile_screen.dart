@@ -58,9 +58,8 @@ class ProfileScreen extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => LoginScreen(
-          selectedRole: app_mode.selectedAppRole,
-        ),
+        builder: (context) =>
+            LoginScreen(selectedRole: app_mode.selectedAppRole),
       ),
     );
   }
@@ -69,9 +68,8 @@ class ProfileScreen extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => RegisterScreen(
-          selectedRole: app_mode.selectedAppRole,
-        ),
+        builder: (context) =>
+            RegisterScreen(selectedRole: app_mode.selectedAppRole),
       ),
     );
   }
@@ -79,18 +77,14 @@ class ProfileScreen extends StatelessWidget {
   void openSavedEvents(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const SavedScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const SavedScreen()),
     );
   }
 
   void changeMode(BuildContext context) {
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(
-        builder: (context) => const ChooseUserTypeScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const ChooseUserTypeScreen()),
       (route) => false,
     );
   }
@@ -98,17 +92,13 @@ class ProfileScreen extends StatelessWidget {
   void logout(BuildContext context) {
     currentUser = null;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Logged out'),
-      ),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Logged out')));
 
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(
-        builder: (context) => const ChooseUserTypeScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const ChooseUserTypeScreen()),
       (route) => false,
     );
   }
@@ -140,11 +130,7 @@ class ProfileScreen extends StatelessWidget {
     final bool isWebLayout = MediaQuery.sizeOf(context).width >= 900;
 
     return Scaffold(
-      appBar: isWebLayout
-          ? null
-          : AppBar(
-              title: const Text('Profile'),
-            ),
+      appBar: isWebLayout ? null : AppBar(title: const Text('Profile')),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -241,10 +227,9 @@ class ProfileScreen extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withValues(alpha: 0.65),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.65),
                     ),
                   ),
                 ],

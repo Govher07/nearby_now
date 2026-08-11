@@ -18,9 +18,5 @@ class EventCategories {
     'Charity',
   ];
 
-  static const List<String> filters = [
-    'All',
-    'Popular',
-    ...eventTypes,
-  ];
+  static const List<String> filters = ['All', 'Popular', ...eventTypes];
 }

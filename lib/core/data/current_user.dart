@@ -9,16 +9,18 @@ AppUser? currentUser;
 class CurrentUserStorage {
   static const String userKey = 'current_user';
   static const String tokenKey = 'access_token';
+  static String? _sessionAccessToken;
 
-  static Future<void> saveUser(AppUser user) async {
+  static Future<void> saveUser(AppUser user, {bool persist = true}) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    await prefs.setString(
-      userKey,
-      jsonEncode(user.toJson()),
-    );
-
     currentUser = user;
+
+    if (persist) {
+      await prefs.setString(userKey, jsonEncode(user.toJson()));
+    } else {
+      await prefs.remove(userKey);
+    }
   }
 
   static Future<AppUser?> loadUser() async {
@@ -41,6 +43,7 @@ class CurrentUserStorage {
 
   static Future<void> clearUser() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
+    _sessionAccessToken = null;
 
     await prefs.remove(userKey);
     await prefs.remove(tokenKey);
@@ -48,13 +51,28 @@ class CurrentUserStorage {
     currentUser = null;
   }
 
-  static Future<void> saveAccessToken(String token) async {
+  static Future<void> saveAccessToken(
+    String token, {
+    bool persist = true,
+  }) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString(tokenKey, token);
+
+    _sessionAccessToken = token;
+
+    if (persist) {
+      await prefs.setString(tokenKey, token);
+    } else {
+      await prefs.remove(tokenKey);
+    }
   }
 
   static Future<String?> loadAccessToken() async {
+    if (_sessionAccessToken != null) {
+      return _sessionAccessToken;
+    }
+
     final SharedPreferences prefs = await SharedPreferences.getInstance();
+
     return prefs.getString(tokenKey);
   }
 

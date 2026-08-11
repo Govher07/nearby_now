@@ -1,14 +1,16 @@
 import 'dart:convert';
+
 import 'package:http/http.dart' as http;
-import '../models/saved_event.dart';
+
 import '../config/api_config.dart';
 import '../data/current_user.dart';
-
+import '../models/event.dart';
+import '../models/saved_event.dart';
 
 class SavedEventService {
   static const String baseUrl = ApiConfig.baseUrl;
 
-  static Future<List<SavedEvent>> fetchSavedEvents() async {
+  static Future<List<Event>> fetchSavedEvents() async {
     final Uri url = Uri.parse('$baseUrl/saved-events');
 
     final response = await http.get(
@@ -17,17 +19,15 @@ class SavedEventService {
     );
 
     if (response.statusCode != 200) {
-      throw Exception('Failed to load saved events');
+      throw Exception('Failed to load saved events: ${response.body}');
     }
 
     final List<dynamic> jsonData = jsonDecode(response.body);
 
-    return jsonData.map((json) {
-      return SavedEvent.fromJson(json);
-    }).toList();
+    return jsonData.map((json) => Event.fromJson(json)).toList();
   }
 
-  static Future<SavedEvent> saveEvent(String eventId) async {
+  static Future<SavedEvent> saveEvent(Event event) async {
     final Uri url = Uri.parse('$baseUrl/saved-events');
 
     final response = await http.post(
@@ -36,12 +36,23 @@ class SavedEventService {
         includeJsonContentType: true,
       ),
       body: jsonEncode({
-        'event_id': eventId,
+        'event_id': event.id,
+        'source': event.source ?? 'nearby_now',
+        'title': event.title,
+        'description': event.description,
+        'category': event.category,
+        'date': event.date,
+        'time': event.time,
+        'location': event.location,
+        'latitude': event.latitude,
+        'longitude': event.longitude,
+        'image_url': event.imageUrl,
+        'external_url': event.externalUrl,
       }),
     );
 
     if (response.statusCode != 200 && response.statusCode != 201) {
-      throw Exception('Failed to save event');
+      throw Exception('Failed to save event: ${response.body}');
     }
 
     final Map<String, dynamic> jsonData = jsonDecode(response.body);
@@ -58,7 +69,7 @@ class SavedEventService {
     );
 
     if (response.statusCode != 200) {
-      throw Exception('Failed to remove saved event');
+      throw Exception('Failed to remove saved event: ${response.body}');
     }
   }
 }

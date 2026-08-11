@@ -55,3 +55,33 @@ class SavedEventDB(Base):
     id = Column(String(100), primary_key=True, index=True)
     event_id = Column(String(100), ForeignKey("events.id"), nullable=False)
     user_id = Column(String(100), ForeignKey("users.id"), nullable=True)
+
+class SavedExternalEventDB(Base):
+    __tablename__ = "saved_external_events"
+    __table_args__ = (
+        UniqueConstraint(
+            "external_event_id",
+            "user_id",
+            name="uq_saved_external_event_user",
+        ),
+    )
+
+    id = Column(String(100), primary_key=True, index=True)
+    external_event_id = Column(String(255), nullable=False)
+    user_id = Column(
+        String(100),
+        ForeignKey("users.id"),
+        nullable=False,
+    )
+
+    source = Column(String(50), nullable=False, default="ticketmaster")
+    title = Column(String(255), nullable=False)
+    description = Column(String(1000), nullable=True)
+    category = Column(String(100), nullable=True)
+    date = Column(String(100), nullable=False)
+    time = Column(String(100), nullable=True)
+    location = Column(String(1000), nullable=True)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+    image_url = Column(String(1000), nullable=True)
+    external_url = Column(String(1000), nullable=True)

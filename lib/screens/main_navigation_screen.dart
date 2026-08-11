@@ -17,10 +17,7 @@ import 'saved_screen.dart';
 class MainNavigationScreen extends StatefulWidget {
   final bool forceHomeTab;
 
-  const MainNavigationScreen({
-    super.key,
-    this.forceHomeTab = false,
-  });
+  const MainNavigationScreen({super.key, this.forceHomeTab = false});
 
   @override
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
@@ -125,11 +122,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       ];
     }
 
-    return const [
-      HomeScreen(),
-      map_screen.MapScreen(),
-      ProfileScreen(),
-    ];
+    return const [HomeScreen(), map_screen.MapScreen(), ProfileScreen()];
   }
 
   List<NavigationDestination> get destinations {
@@ -189,9 +182,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => LoginScreen(
-          selectedRole: app_mode.selectedAppRole,
-        ),
+        builder: (context) =>
+            LoginScreen(selectedRole: app_mode.selectedAppRole),
       ),
     );
   }
@@ -200,9 +192,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => RegisterScreen(
-          selectedRole: app_mode.selectedAppRole,
-        ),
+        builder: (context) =>
+            RegisterScreen(selectedRole: app_mode.selectedAppRole),
       ),
     );
   }
@@ -210,9 +201,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   void openChooseMode() {
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(
-        builder: (context) => const ChooseUserTypeScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const ChooseUserTypeScreen()),
       (route) => false,
     );
   }
@@ -220,9 +209,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   void openSavedEvents() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const SavedScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const SavedScreen()),
     );
   }
 
@@ -234,11 +221,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
     saveSelectedTab(0);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Logged out'),
-      ),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Logged out')));
   }
 
   void showComingSoon(String title) {
@@ -310,8 +295,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final List<Widget> currentScreens = screens;
     final List<NavigationDestination> currentDestinations = destinations;
 
-    final int safeIndex =
-        selectedIndex >= currentScreens.length ? 0 : selectedIndex;
+    final int safeIndex = selectedIndex >= currentScreens.length
+        ? 0
+        : selectedIndex;
 
     if (!isWebLayout) {
       return Scaffold(
@@ -328,11 +314,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       body: Stack(
         children: [
           currentScreens[safeIndex],
-          Positioned(
-            top: 18,
-            right: 24,
-            child: buildProfileMenuButton(),
-          ),
+          Positioned(top: 18, right: 24, child: buildProfileMenuButton()),
         ],
       ),
     );
@@ -471,9 +453,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           CircleAvatar(
             radius: 24,
             child: Icon(
-              isBusinessMode
-                  ? Icons.storefront_outlined
-                  : Icons.person_outline,
+              isBusinessMode ? Icons.storefront_outlined : Icons.person_outline,
             ),
           ),
           const SizedBox(width: 12),
@@ -485,9 +465,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   displayName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -496,10 +474,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.65),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.65),
                   ),
                 ),
               ],
@@ -518,9 +495,7 @@ class _BusinessGuestScreen extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => LoginScreen(
-          selectedRole: 'business_owner',
-        ),
+        builder: (context) => LoginScreen(selectedRole: 'business_owner'),
       ),
     );
   }
@@ -529,9 +504,7 @@ class _BusinessGuestScreen extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => RegisterScreen(
-          selectedRole: 'business_owner',
-        ),
+        builder: (context) => RegisterScreen(selectedRole: 'business_owner'),
       ),
     );
   }
@@ -541,29 +514,20 @@ class _BusinessGuestScreen extends StatelessWidget {
     final bool isWebLayout = MediaQuery.sizeOf(context).width >= 900;
 
     return Scaffold(
-      appBar: isWebLayout
-          ? null
-          : AppBar(
-              title: const Text('Business Owner'),
-            ),
+      appBar: isWebLayout ? null : AppBar(title: const Text('Business Owner')),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: 560,
-              ),
+              constraints: const BoxConstraints(maxWidth: 560),
               child: Card(
                 child: Padding(
                   padding: const EdgeInsets.all(28),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
-                        Icons.storefront_outlined,
-                        size: 64,
-                      ),
+                      const Icon(Icons.storefront_outlined, size: 64),
                       const SizedBox(height: 20),
                       const Text(
                         'Business Owner Mode',
@@ -577,9 +541,7 @@ class _BusinessGuestScreen extends StatelessWidget {
                       const Text(
                         'Sign in or register to create events, manage your listings, and view your business dashboard.',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 16,
-                        ),
+                        style: TextStyle(fontSize: 16),
                       ),
                       const SizedBox(height: 28),
                       SizedBox(

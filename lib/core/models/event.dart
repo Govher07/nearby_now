@@ -12,6 +12,7 @@ class Event {
   final String? ownerId;
   final String? imageUrl;
   final String? source;
+  final String? externalUrl;
 
   final String? addressLine;
   final String? city;
@@ -38,6 +39,7 @@ class Event {
     this.state,
     this.country,
     this.zipCode,
+    this.externalUrl,
   });
 
   factory Event.fromJson(Map<String, dynamic> json) {
@@ -60,6 +62,7 @@ class Event {
       state: json['state']?.toString(),
       country: json['country']?.toString(),
       zipCode: json['zip_code']?.toString(),
+      externalUrl: json['external_url']?.toString(),
     );
   }
 
@@ -82,59 +85,54 @@ class Event {
       'state': state,
       'country': country,
       'zip_code': zipCode,
+      'external_url': externalUrl,
     };
   }
 
   Event copyWith({
-  String? id,
-  String? title,
-  String? description,
-  String? location,
-  String? category,
-  String? date,
-  String? time,
-  double? distance,
-  double? latitude,
-  double? longitude,
-  String? ownerId,
-  String? imageUrl,
-  String? source,
-  String? addressLine,
-  String? city,
-  String? state,
-  String? country,
-  String? zipCode,
-}) {
-  return Event(
-    id: id ?? this.id,
-    title: title ?? this.title,
-    description: description ?? this.description,
-    location: location ?? this.location,
-    category: category ?? this.category,
-    date: date ?? this.date,
-    time: time ?? this.time,
-    distance: distance ?? this.distance,
-    latitude: latitude ?? this.latitude,
-    longitude: longitude ?? this.longitude,
-    ownerId: ownerId ?? this.ownerId,
-    imageUrl: imageUrl ?? this.imageUrl,
-    source: source ?? this.source,
-    addressLine: addressLine ?? this.addressLine,
-    city: city ?? this.city,
-    state: state ?? this.state,
-    country: country ?? this.country,
-    zipCode: zipCode ?? this.zipCode,
-  );
-}
+    String? id,
+    String? title,
+    String? description,
+    String? location,
+    String? category,
+    String? date,
+    String? time,
+    double? distance,
+    double? latitude,
+    double? longitude,
+    String? ownerId,
+    String? imageUrl,
+    String? source,
+    String? addressLine,
+    String? city,
+    String? state,
+    String? country,
+    String? zipCode,
+  }) {
+    return Event(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      location: location ?? this.location,
+      category: category ?? this.category,
+      date: date ?? this.date,
+      time: time ?? this.time,
+      distance: distance ?? this.distance,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      ownerId: ownerId ?? this.ownerId,
+      imageUrl: imageUrl ?? this.imageUrl,
+      source: source ?? this.source,
+      addressLine: addressLine ?? this.addressLine,
+      city: city ?? this.city,
+      state: state ?? this.state,
+      country: country ?? this.country,
+      zipCode: zipCode ?? this.zipCode,
+    );
+  }
 
   String get fullAddress {
-    final List<String> parts = [
-      addressLine,
-      city,
-      state,
-      country,
-      zipCode,
-    ]
+    final List<String> parts = [addressLine, city, state, country, zipCode]
         .where((part) => part != null && part.trim().isNotEmpty)
         .map((part) => part!)
         .toList();

@@ -7,10 +7,7 @@ import '../../screens/main_navigation_screen.dart';
 class RegisterScreen extends StatefulWidget {
   final String selectedRole;
 
-  const RegisterScreen({
-    super.key,
-    required this.selectedRole,
-  });
+  const RegisterScreen({super.key, required this.selectedRole});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -59,16 +56,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (context) => const MainNavigationScreen(),
-        ),
+        MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
       );
     } catch (error) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Registration failed: $error')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Registration failed: $error')));
     } finally {
       if (mounted) {
         setState(() {
@@ -89,19 +84,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('$roleLabel Register'),
-      ),
+      appBar: AppBar(title: Text('$roleLabel Register')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             Text(
               'Create a $roleLabel account',
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
 
             const SizedBox(height: 20),

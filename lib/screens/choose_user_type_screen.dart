@@ -9,8 +9,10 @@ import '../screens/main_navigation_screen.dart';
 class ChooseUserTypeScreen extends StatelessWidget {
   const ChooseUserTypeScreen({super.key});
 
-  void chooseMode(BuildContext context, String role) {
-    app_mode.selectedAppRole = role;
+  Future<void> chooseMode(BuildContext context, String role) async {
+    await app_mode.saveSelectedAppRole(role);
+
+    if (!context.mounted) return;
 
     // Prevent old logged-in user from leaking into the other mode.
     if (currentUser?.role != role) {
@@ -20,9 +22,7 @@ class ChooseUserTypeScreen extends StatelessWidget {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => const MainNavigationScreen(
-          forceHomeTab: true,
-        ),
+        builder: (context) => const MainNavigationScreen(forceHomeTab: true),
       ),
     );
   }
@@ -50,10 +50,7 @@ class ChooseUserTypeScreen extends StatelessWidget {
                   alignment: Alignment.center,
                   child: const Text(
                     'Background image failed to load',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                    ),
+                    style: TextStyle(color: Colors.white, fontSize: 18),
                   ),
                 );
               },
@@ -97,10 +94,7 @@ class ChooseUserTypeScreen extends StatelessWidget {
                     const Text(
                       'Choose how you want to explore local events.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 17,
-                        color: Colors.white70,
-                      ),
+                      style: TextStyle(fontSize: 17, color: Colors.white70),
                     ),
                   ],
                 ),
@@ -172,10 +166,7 @@ class _RoleCard extends StatelessWidget {
             child: Container(
               width: 150,
               height: 150,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 18,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 18),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(26),
@@ -187,11 +178,7 @@ class _RoleCard extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    icon,
-                    size: 42,
-                    color: Colors.white,
-                  ),
+                  Icon(icon, size: 42, color: Colors.white),
                   const SizedBox(height: 18),
                   Text(
                     title,

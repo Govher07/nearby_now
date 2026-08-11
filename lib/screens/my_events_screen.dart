@@ -33,19 +33,14 @@ class _MyEventsScreenState extends State<MyEventsScreen> {
       appBar: AppBar(
         title: const Text('My Posted Events'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: refreshEvents,
-          ),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: refreshEvents),
         ],
       ),
       body: FutureBuilder<List<Event>>(
         future: eventsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {

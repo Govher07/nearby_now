@@ -45,11 +45,9 @@ class EventService {
     final double latDifference = lat2 - lat1;
     final double lonDifference = lon2 - lon1;
 
-    final double a = sin(latDifference / 2) * sin(latDifference / 2) +
-        cos(lat1) *
-            cos(lat2) *
-            sin(lonDifference / 2) *
-            sin(lonDifference / 2);
+    final double a =
+        sin(latDifference / 2) * sin(latDifference / 2) +
+        cos(lat1) * cos(lat2) * sin(lonDifference / 2) * sin(lonDifference / 2);
 
     final double c = 2 * atan2(sqrt(a), sqrt(1 - a));
 
@@ -60,28 +58,28 @@ class EventService {
     return degrees * pi / 180;
   }
 
- static List<Event> applyDistanceFromUser({
-  required List<Event> events,
-  required double userLatitude,
-  required double userLongitude,
-}) {
-  return events.map((event) {
-    if (event.latitude == 0.0 && event.longitude == 0.0) {
-      return event;
-    }
+  static List<Event> applyDistanceFromUser({
+    required List<Event> events,
+    required double userLatitude,
+    required double userLongitude,
+  }) {
+    return events.map((event) {
+      if (event.latitude == 0.0 && event.longitude == 0.0) {
+        return event;
+      }
 
-    final double calculatedDistance = calculateDistanceInMiles(
-      userLatitude: userLatitude,
-      userLongitude: userLongitude,
-      eventLatitude: event.latitude,
-      eventLongitude: event.longitude,
-    );
+      final double calculatedDistance = calculateDistanceInMiles(
+        userLatitude: userLatitude,
+        userLongitude: userLongitude,
+        eventLatitude: event.latitude,
+        eventLongitude: event.longitude,
+      );
 
-    return event.copyWith(
-      distance: double.parse(calculatedDistance.toStringAsFixed(1)),
-    );
-  }).toList();
-}
+      return event.copyWith(
+        distance: double.parse(calculatedDistance.toStringAsFixed(1)),
+      );
+    }).toList();
+  }
 
   // GET /external-events
   static Future<List<Event>> fetchExternalEvents({
@@ -113,40 +111,81 @@ class EventService {
   }
 
   // Internal Nearby Now events + external Ticketmaster events
- static Future<List<Event>> fetchAllEvents() async {
-  List<Event> internalEvents = [];
+  static Future<List<Event>> fetchAllEvents() async {
+    List<Event> internalEvents = [];
 
-  try {
-    internalEvents = await fetchEvents();
-  } catch (error) {
-    debugPrint('Local events failed: $error');
+    try {
+      internalEvents = await fetchEvents();
+    } catch (error) {
+      debugPrint('Local events failed: $error');
+    }
+
+    try {
+      final position = await LocationService.getCurrentLocation();
+
+      final List<Event> externalEvents = await fetchExternalEvents(
+        lat: position.latitude,
+        lng: position.longitude,
+        radius: 25,
+      );
+
+      final DateTime now = DateTime.now();
+      final DateTime today = DateTime(now.year, now.month, now.day);
+
+      // Combine events and remove past events.
+      final List<Event> upcomingEvents = [...internalEvents, ...externalEvents]
+          .where((event) {
+            final DateTime? eventDate = DateTime.tryParse(event.date);
+
+            return eventDate != null && !eventDate.isBefore(today);
+          })
+          .toList();
+
+      // Calculate each event's distance from the user.
+      final List<Event> eventsWithDistance = applyDistanceFromUser(
+        events: upcomingEvents,
+        userLatitude: position.latitude,
+        userLongitude: position.longitude,
+      );
+
+      // Show nearest events first.
+      eventsWithDistance.sort((firstEvent, secondEvent) {
+        final int distanceComparison = firstEvent.distance.compareTo(
+          secondEvent.distance,
+        );
+
+        // If two events have the same distance, show the earliest one first.
+        if (distanceComparison == 0) {
+          return DateTime.parse(
+            firstEvent.date,
+          ).compareTo(DateTime.parse(secondEvent.date));
+        }
+
+        return distanceComparison;
+      });
+
+      return eventsWithDistance;
+    } catch (error) {
+      debugPrint('External events or location failed: $error');
+
+      final DateTime now = DateTime.now();
+      final DateTime today = DateTime(now.year, now.month, now.day);
+
+      // Distance sorting is unavailable without the user's location.
+      final List<Event> upcomingInternalEvents =
+          internalEvents.where((event) {
+            final DateTime? eventDate = DateTime.tryParse(event.date);
+
+            return eventDate != null && !eventDate.isBefore(today);
+          }).toList()..sort((firstEvent, secondEvent) {
+            return DateTime.parse(
+              firstEvent.date,
+            ).compareTo(DateTime.parse(secondEvent.date));
+          });
+
+      return upcomingInternalEvents;
+    }
   }
-
-  try {
-    final position = await LocationService.getCurrentLocation();
-
-    final List<Event> externalEvents = await fetchExternalEvents(
-      lat: position.latitude,
-      lng: position.longitude,
-      radius: 25,
-    );
-
-    final List<Event> allEvents = [
-      ...internalEvents,
-      ...externalEvents,
-    ];
-
-    return applyDistanceFromUser(
-      events: allEvents,
-      userLatitude: position.latitude,
-      userLongitude: position.longitude,
-    );
-  } catch (error) {
-    debugPrint('External events or location failed: $error');
-
-    return internalEvents;
-  }
-}
 
   // POST /events
   static Future<Event> createEvent(Event event) async {
@@ -261,7 +300,9 @@ class EventService {
   }
 
   // GET /events/{eventId}/analytics
-  static Future<Map<String, dynamic>> fetchEventAnalytics(String eventId) async {
+  static Future<Map<String, dynamic>> fetchEventAnalytics(
+    String eventId,
+  ) async {
     final Uri url = Uri.parse('$baseUrl/events/$eventId/analytics');
 
     final response = await http.get(
