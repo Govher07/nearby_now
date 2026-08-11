@@ -8,11 +8,7 @@ class EventMap extends StatelessWidget {
   final List<Event> events;
   final double height;
 
-  const EventMap({
-    super.key,
-    required this.events,
-    this.height = 250,
-  });
+  const EventMap({super.key, required this.events, this.height = 250});
 
   @override
   Widget build(BuildContext context) {
@@ -33,10 +29,7 @@ class EventMap extends StatelessWidget {
       width: double.infinity,
       child: FlutterMap(
         options: MapOptions(
-          initialCenter: LatLng(
-            firstEvent.latitude,
-            firstEvent.longitude,
-          ),
+          initialCenter: LatLng(firstEvent.latitude, firstEvent.longitude),
           initialZoom: 13,
         ),
         children: [

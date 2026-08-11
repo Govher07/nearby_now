@@ -71,6 +71,19 @@ class Review(ReviewCreate):
 
 class SavedEventCreate(BaseModel):
     event_id: str
+    source: str = "nearby_now"
+
+    title: str | None = None
+    description: str | None = None
+    category: str | None = None
+    date: str | None = None
+    time: str | None = None
+    location: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    image_url: str | None = None
+    external_url: str | None = None
+
     user_id: str | None = None
 
 
@@ -78,3 +91,19 @@ class SavedEvent(SavedEventCreate):
     model_config = ConfigDict(from_attributes=True)
 
     id: str
+
+class SavedEventDetails(BaseModel):
+    id: str
+    title: str
+    description: str | None = None
+    category: str | None = None
+    date: str
+    time: str | None = None
+    location: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    image_url: str | None = None
+    external_url: str | None = None
+    source: str = "nearby_now"
+
+    model_config = ConfigDict(from_attributes=True)

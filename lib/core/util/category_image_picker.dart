@@ -61,7 +61,7 @@ class CategoryImagePicker {
       'assets/images/business/business_2.jpg',
       'assets/images/business/business_3.jpg',
     ],
-    
+
     'Education': [
       'assets/images/education/education_1.jpg',
       'assets/images/education/education_2.jpg',

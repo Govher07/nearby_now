@@ -8,19 +8,14 @@ class GeocodedLocation {
   final double latitude;
   final double longitude;
 
-  const GeocodedLocation({
-    required this.latitude,
-    required this.longitude,
-  });
+  const GeocodedLocation({required this.latitude, required this.longitude});
 }
 
 class GeocodingService {
   static Future<GeocodedLocation> geocodeAddress(String address) async {
-    final Uri url = Uri.parse('${EventService.baseUrl}/geocode').replace(
-      queryParameters: {
-        'address': address,
-      },
-    );
+    final Uri url = Uri.parse(
+      '${EventService.baseUrl}/geocode',
+    ).replace(queryParameters: {'address': address});
 
     final response = await http.get(url);
 

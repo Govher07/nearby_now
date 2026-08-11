@@ -1,6 +1,3 @@
-enum UserMode {
-  eventSeeker,
-  businessOwner,
-}
+enum UserMode { eventSeeker, businessOwner }
 
 UserMode? selectedUserMode;

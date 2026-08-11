@@ -16,10 +16,7 @@ import 'edit_event_screen.dart';
 class EventDetailsScreen extends StatefulWidget {
   final Event event;
 
-  const EventDetailsScreen({
-    super.key,
-    required this.event,
-  });
+  const EventDetailsScreen({super.key, required this.event});
 
   @override
   State<EventDetailsScreen> createState() => _EventDetailsScreenState();
@@ -99,10 +96,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       return 0;
     }
 
-    final int total = reviews.fold(
-      0,
-      (sum, review) => sum + review.rating,
-    );
+    final int total = reviews.fold(0, (sum, review) => sum + review.rating);
 
     return total / reviews.length;
   }
@@ -115,7 +109,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       if (wasSaved) {
         await SavedEventService.removeSavedEvent(widget.event.id);
       } else {
-        await SavedEventService.saveEvent(widget.event.id);
+        await SavedEventService.saveEvent(widget.event);
       }
 
       if (!mounted) return;
@@ -126,18 +120,14 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
       messenger.showSnackBar(
         SnackBar(
-          content: Text(
-            wasSaved ? 'Event removed from saved' : 'Event saved',
-          ),
+          content: Text(wasSaved ? 'Event removed from saved' : 'Event saved'),
         ),
       );
     } catch (error) {
       if (!mounted) return;
 
       messenger.showSnackBar(
-        SnackBar(
-          content: Text('Could not update saved event: $error'),
-        ),
+        SnackBar(content: Text('Could not update saved event: $error')),
       );
     }
   }
@@ -151,20 +141,14 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
       if (!mounted) return;
 
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Event deleted'),
-        ),
-      );
+      messenger.showSnackBar(const SnackBar(content: Text('Event deleted')));
 
       navigator.pop(true);
     } catch (error) {
       if (!mounted) return;
 
       messenger.showSnackBar(
-        SnackBar(
-          content: Text('Could not delete event: $error'),
-        ),
+        SnackBar(content: Text('Could not delete event: $error')),
       );
     }
   }
@@ -172,7 +156,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   void shareEvent() {
     final Event event = widget.event;
 
-    final String shareText = '''
+    final String shareText =
+        '''
 Check out this event on Nearby Now!
 
 ${event.title}
@@ -183,14 +168,10 @@ Distance: ${event.distance} miles away
 $cleanDescription
 ''';
 
-    Clipboard.setData(
-      ClipboardData(text: shareText),
-    );
+    Clipboard.setData(ClipboardData(text: shareText));
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Event details copied to clipboard'),
-      ),
+      const SnackBar(content: Text('Event details copied to clipboard')),
     );
   }
 
@@ -259,8 +240,9 @@ $cleanDescription
                       comment: comment.isEmpty ? 'No written review' : comment,
                     );
 
-                    final NavigatorState navigator =
-                        Navigator.of(dialogContext);
+                    final NavigatorState navigator = Navigator.of(
+                      dialogContext,
+                    );
                     final ScaffoldMessengerState messenger =
                         ScaffoldMessenger.of(context);
 
@@ -276,9 +258,7 @@ $cleanDescription
                       navigator.pop();
 
                       messenger.showSnackBar(
-                        const SnackBar(
-                          content: Text('Rating submitted'),
-                        ),
+                        const SnackBar(content: Text('Rating submitted')),
                       );
 
                       refreshReviews();
@@ -309,25 +289,15 @@ $cleanDescription
       return Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            flex: 3,
-            child: buildEventImage(),
-          ),
+          Expanded(flex: 3, child: buildEventImage()),
           const SizedBox(width: 16),
-          SizedBox(
-            width: 340,
-            child: buildMiniMap(),
-          ),
+          SizedBox(width: 340, child: buildMiniMap()),
         ],
       );
     }
 
     return Column(
-      children: [
-        buildEventImage(),
-        const SizedBox(height: 14),
-        buildMiniMap(),
-      ],
+      children: [buildEventImage(), const SizedBox(height: 14), buildMiniMap()],
     );
   }
 
@@ -373,10 +343,7 @@ $cleanDescription
       child: const Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.image_not_supported_outlined,
-            size: 42,
-          ),
+          Icon(Icons.image_not_supported_outlined, size: 42),
           SizedBox(height: 8),
           Text('Image not available'),
         ],
@@ -409,10 +376,7 @@ $cleanDescription
             MarkerLayer(
               markers: [
                 Marker(
-                  point: LatLng(
-                    widget.event.latitude,
-                    widget.event.longitude,
-                  ),
+                  point: LatLng(widget.event.latitude, widget.event.longitude),
                   width: 44,
                   height: 44,
                   child: const Icon(
@@ -435,9 +399,7 @@ $cleanDescription
     final bool isWebLayout = MediaQuery.sizeOf(context).width >= 900;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Event Details'),
-      ),
+      appBar: AppBar(title: const Text('Event Details')),
       body: FutureBuilder<List<Review>>(
         future: reviewsFuture,
         builder: (context, snapshot) {
@@ -456,9 +418,7 @@ $cleanDescription
             ),
             child: Center(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  maxWidth: 1100,
-                ),
+                constraints: const BoxConstraints(maxWidth: 1100),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -517,55 +477,52 @@ $cleanDescription
   Widget _buildEventTitle(Event event) {
     return Text(
       event.title,
-      style: const TextStyle(
-        fontSize: 28,
-        fontWeight: FontWeight.bold,
-      ),
+      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
     );
   }
 
- Widget _buildEventMeta(Event event) {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Wrap(
-        spacing: 10,
-        runSpacing: 8,
-        children: [
-          Chip(
-            avatar: const Icon(Icons.category_outlined, size: 18),
-            label: Text(event.category),
-          ),
-          Chip(
-            avatar: const Icon(Icons.calendar_today_outlined, size: 18),
-            label: Text('${event.date} at ${event.time}'),
-          ),
-
-          // Show distance only for Event Seeker, not Business Owner.
-          if (!isBusinessOwner)
+  Widget _buildEventMeta(Event event) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: 10,
+          runSpacing: 8,
+          children: [
             Chip(
-              avatar: const Icon(Icons.directions_walk, size: 18),
-              label: Text('${event.distance} miles away'),
+              avatar: const Icon(Icons.category_outlined, size: 18),
+              label: Text(event.category),
             ),
-        ],
-      ),
-      const SizedBox(height: 10),
-      Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.location_on_outlined, size: 20),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              event.fullAddress,
-              style: const TextStyle(fontSize: 15),
+            Chip(
+              avatar: const Icon(Icons.calendar_today_outlined, size: 18),
+              label: Text('${event.date} at ${event.time}'),
             ),
-          ),
-        ],
-      ),
-    ],
-  );
-}
+
+            // Show distance only for Event Seeker, not Business Owner.
+            if (!isBusinessOwner)
+              Chip(
+                avatar: const Icon(Icons.directions_walk, size: 18),
+                label: Text('${event.distance} miles away'),
+              ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(Icons.location_on_outlined, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                event.fullAddress,
+                style: const TextStyle(fontSize: 15),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
 
   Widget _buildRatingSummary({
     required bool isLoading,
@@ -613,9 +570,7 @@ $cleanDescription
             if (!mounted) return;
 
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Could not open directions: $error'),
-              ),
+              SnackBar(content: Text('Could not open directions: $error')),
             );
           }
         },
@@ -637,9 +592,7 @@ $cleanDescription
       children: [
         IconButton(
           tooltip: isSaved ? 'Remove from saved' : 'Save event',
-          icon: Icon(
-            isSaved ? Icons.bookmark : Icons.bookmark_border,
-          ),
+          icon: Icon(isSaved ? Icons.bookmark : Icons.bookmark_border),
           onPressed: toggleSave,
         ),
         IconButton(
@@ -662,10 +615,7 @@ $cleanDescription
       children: [
         const Text(
           'Business actions',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 10),
         Wrap(
@@ -679,9 +629,7 @@ $cleanDescription
                 final bool? wasUpdated = await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => EditEventScreen(
-                      event: widget.event,
-                    ),
+                    builder: (context) => EditEventScreen(event: widget.event),
                   ),
                 );
 
@@ -700,9 +648,7 @@ $cleanDescription
               label: const Text('Reviews below'),
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Reviews are shown below.'),
-                  ),
+                  const SnackBar(content: Text('Reviews are shown below.')),
                 );
               },
             ),
@@ -718,9 +664,7 @@ $cleanDescription
     required List<Review> eventReviews,
   }) {
     if (isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (snapshot.hasError) {
@@ -732,16 +676,11 @@ $cleanDescription
       children: [
         const Text(
           'Reviews',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         eventReviews.isEmpty
-            ? const Text(
-                'No reviews yet.\nBe the first to rate this event.',
-              )
+            ? const Text('No reviews yet.\nBe the first to rate this event.')
             : Column(
                 children: eventReviews.map((review) {
                   return Card(

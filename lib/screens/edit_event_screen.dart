@@ -6,10 +6,7 @@ import '../core/services/event_service.dart';
 class EditEventScreen extends StatefulWidget {
   final Event event;
 
-  const EditEventScreen({
-    super.key,
-    required this.event,
-  });
+  const EditEventScreen({super.key, required this.event});
 
   @override
   State<EditEventScreen> createState() => _EditEventScreenState();
@@ -31,8 +28,9 @@ class _EditEventScreenState extends State<EditEventScreen> {
     super.initState();
 
     titleController = TextEditingController(text: widget.event.title);
-    descriptionController =
-        TextEditingController(text: widget.event.description);
+    descriptionController = TextEditingController(
+      text: widget.event.description,
+    );
     locationController = TextEditingController(text: widget.event.location);
     timeController = TextEditingController(text: widget.event.time);
 
@@ -85,9 +83,9 @@ class _EditEventScreenState extends State<EditEventScreen> {
     } catch (error) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not update event: $error')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not update event: $error')));
     } finally {
       if (mounted) {
         setState(() {
@@ -109,9 +107,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Edit Event'),
-      ),
+      appBar: AppBar(title: const Text('Edit Event')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(

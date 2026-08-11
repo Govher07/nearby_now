@@ -2,10 +2,7 @@ class SavedEvent {
   final String id;
   final String eventId;
 
-  const SavedEvent({
-    required this.id,
-    required this.eventId,
-  });
+  const SavedEvent({required this.id, required this.eventId});
 
   factory SavedEvent.fromJson(Map<String, dynamic> json) {
     return SavedEvent(
@@ -15,8 +12,6 @@ class SavedEvent {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'event_id': eventId,
-    };
+    return {'event_id': eventId};
   }
 }

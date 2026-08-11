@@ -70,34 +70,31 @@ void main() {
         zipCode: '98029',
       );
 
-      expect(
-        event.fullAddress,
-        contains('1801 12th Ave'),
-      );
-      expect(
-        event.fullAddress,
-        contains('Issaquah'),
-      );
+      expect(event.fullAddress, contains('1801 12th Ave'));
+      expect(event.fullAddress, contains('Issaquah'));
     });
 
-    test('fullAddress falls back to location when address fields are empty', () {
-      final Event event = Event(
-        id: 'event-1',
-        title: 'Jazz',
-        description: 'Music event',
-        category: 'Music',
-        date: '2026-06-03',
-        time: '8:00 PM',
-        distance: 1.0,
-        location: 'Seattle',
-        latitude: 47.6062,
-        longitude: -122.3321,
-        ownerId: 'owner-1',
-        imageUrl: null,
-        source: 'local',
-      );
+    test(
+      'fullAddress falls back to location when address fields are empty',
+      () {
+        final Event event = Event(
+          id: 'event-1',
+          title: 'Jazz',
+          description: 'Music event',
+          category: 'Music',
+          date: '2026-06-03',
+          time: '8:00 PM',
+          distance: 1.0,
+          location: 'Seattle',
+          latitude: 47.6062,
+          longitude: -122.3321,
+          ownerId: 'owner-1',
+          imageUrl: null,
+          source: 'local',
+        );
 
-      expect(event.fullAddress, 'Seattle');
-    });
+        expect(event.fullAddress, 'Seattle');
+      },
+    );
   });
 }

@@ -31,18 +31,12 @@ class _MapScreenState extends State<MapScreen> {
     try {
       final position = await LocationService.getCurrentLocation();
 
-      currentUserLocation = LatLng(
-        position.latitude,
-        position.longitude,
-      );
+      currentUserLocation = LatLng(position.latitude, position.longitude);
     } catch (error) {
       debugPrint('Could not get user location: $error');
     }
 
-    return _MapData(
-      events: events,
-      userLocation: currentUserLocation,
-    );
+    return _MapData(events: events, userLocation: currentUserLocation);
   }
 
   void refreshEvents() {
@@ -60,10 +54,7 @@ class _MapScreenState extends State<MapScreen> {
     }
 
     if (events.isNotEmpty) {
-      return LatLng(
-        events.first.latitude,
-        events.first.longitude,
-      );
+      return LatLng(events.first.latitude, events.first.longitude);
     }
 
     // Last fallback only if location fails and there are no events.
@@ -104,9 +95,7 @@ class _MapScreenState extends State<MapScreen> {
                 children: [
                   const Icon(Icons.location_on_outlined, size: 18),
                   const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(event.fullAddress),
-                  ),
+                  Expanded(child: Text(event.fullAddress)),
                 ],
               ),
               const SizedBox(height: 16),
@@ -143,11 +132,7 @@ class _MapScreenState extends State<MapScreen> {
           onTap: () {
             openEventPreview(event);
           },
-          child: const Icon(
-            Icons.location_on,
-            size: 42,
-            color: Colors.red,
-          ),
+          child: const Icon(Icons.location_on, size: 42, color: Colors.red),
         ),
       );
     }).toList();
@@ -167,11 +152,7 @@ class _MapScreenState extends State<MapScreen> {
           color: Colors.blue.withValues(alpha: 0.20),
           shape: BoxShape.circle,
         ),
-        child: const Icon(
-          Icons.my_location,
-          color: Colors.blue,
-          size: 30,
-        ),
+        child: const Icon(Icons.my_location, color: Colors.blue, size: 30),
       ),
     );
   }
@@ -183,9 +164,7 @@ class _MapScreenState extends State<MapScreen> {
         future: mapFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {
@@ -200,11 +179,8 @@ class _MapScreenState extends State<MapScreen> {
             );
           }
 
-          final _MapData data = snapshot.data ??
-              const _MapData(
-                events: [],
-                userLocation: null,
-              );
+          final _MapData data =
+              snapshot.data ?? const _MapData(events: [], userLocation: null);
 
           final List<Event> events = data.events;
           final LatLng? userLocation = data.userLocation;
@@ -231,9 +207,7 @@ class _MapScreenState extends State<MapScreen> {
                         'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                     userAgentPackageName: 'com.example.nearby_now',
                   ),
-                  MarkerLayer(
-                    markers: markers,
-                  ),
+                  MarkerLayer(markers: markers),
                 ],
               ),
               Positioned(
@@ -264,8 +238,5 @@ class _MapData {
   final List<Event> events;
   final LatLng? userLocation;
 
-  const _MapData({
-    required this.events,
-    required this.userLocation,
-  });
+  const _MapData({required this.events, required this.userLocation});
 }

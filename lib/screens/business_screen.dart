@@ -63,18 +63,14 @@ class _BusinessScreenState extends State<BusinessScreen> {
   void openMyEvents() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const MyEventsScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const MyEventsScreen()),
     );
   }
 
   void openEventDetails(Event event) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => EventDetailsScreen(event: event),
-      ),
+      MaterialPageRoute(builder: (context) => EventDetailsScreen(event: event)),
     );
   }
 
@@ -99,9 +95,7 @@ class _BusinessScreenState extends State<BusinessScreen> {
                 ),
               ],
             ),
-      body: SafeArea(
-        child: isWebLayout ? buildWebBody() : buildMobileBody(),
-      ),
+      body: SafeArea(child: isWebLayout ? buildWebBody() : buildMobileBody()),
     );
   }
 
@@ -164,10 +158,7 @@ class _BusinessScreenState extends State<BusinessScreen> {
                       child: buildRecentEventsSection(isWebLayout: true),
                     ),
                     const SizedBox(width: 24),
-                    SizedBox(
-                      width: 320,
-                      child: buildWebSidePanel(),
-                    ),
+                    SizedBox(width: 320, child: buildWebSidePanel()),
                   ],
                 ),
               ],
@@ -184,17 +175,12 @@ class _BusinessScreenState extends State<BusinessScreen> {
       children: [
         const Text(
           'Business Dashboard',
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         Text(
           'Welcome back, ${currentUser?.name ?? 'Business Owner'}',
-          style: const TextStyle(
-            fontSize: 16,
-          ),
+          style: const TextStyle(fontSize: 16),
         ),
       ],
     );
@@ -214,27 +200,20 @@ class _BusinessScreenState extends State<BusinessScreen> {
       ),
       child: Row(
         children: [
-          const Icon(
-            Icons.storefront_outlined,
-            size: 32,
-          ),
+          const Icon(Icons.storefront_outlined, size: 32),
           const SizedBox(width: 14),
           const Text(
             'Business Dashboard',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
           ),
           const SizedBox(width: 18),
           Text(
             'Manage your events and performance',
             style: TextStyle(
               fontSize: 15,
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
-                  .withValues(alpha: 0.70),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.70),
             ),
           ),
           const Spacer(),
@@ -248,18 +227,13 @@ class _BusinessScreenState extends State<BusinessScreen> {
     );
   }
 
-  Widget buildAnalyticsSection({
-    required bool isWebLayout,
-  }) {
+  Widget buildAnalyticsSection({required bool isWebLayout}) {
     return FutureBuilder<Map<String, int>>(
       future: analyticsFuture,
       builder: (context, snapshot) {
-        final Map<String, int> analytics = snapshot.data ??
-            {
-              'total_events': 0,
-              'total_views': 0,
-              'total_saves': 0,
-            };
+        final Map<String, int> analytics =
+            snapshot.data ??
+            {'total_events': 0, 'total_views': 0, 'total_saves': 0};
 
         final bool isLoading =
             snapshot.connectionState == ConnectionState.waiting;
@@ -326,10 +300,9 @@ class _BusinessScreenState extends State<BusinessScreen> {
               width: 54,
               height: 54,
               decoration: BoxDecoration(
-                color: Theme.of(context)
-                    .colorScheme
-                    .primary
-                    .withValues(alpha: 0.12),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(
@@ -362,10 +335,9 @@ class _BusinessScreenState extends State<BusinessScreen> {
                     subtitle,
                     style: TextStyle(
                       fontSize: 13,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withValues(alpha: 0.65),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.65),
                     ),
                   ),
                 ],
@@ -386,10 +358,7 @@ class _BusinessScreenState extends State<BusinessScreen> {
           children: [
             const Text(
               'Quick Actions',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 14),
             SizedBox(
@@ -426,10 +395,7 @@ class _BusinessScreenState extends State<BusinessScreen> {
               children: [
                 const Text(
                   'Quick Actions',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 18),
                 SizedBox(
@@ -462,10 +428,7 @@ class _BusinessScreenState extends State<BusinessScreen> {
               children: [
                 const Text(
                   'Business Tips',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 12),
                 buildTipRow(
@@ -488,10 +451,7 @@ class _BusinessScreenState extends State<BusinessScreen> {
     );
   }
 
-  Widget buildTipRow({
-    required IconData icon,
-    required String text,
-  }) {
+  Widget buildTipRow({required IconData icon, required String text}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
@@ -499,17 +459,13 @@ class _BusinessScreenState extends State<BusinessScreen> {
         children: [
           Icon(icon, size: 19),
           const SizedBox(width: 10),
-          Expanded(
-            child: Text(text),
-          ),
+          Expanded(child: Text(text)),
         ],
       ),
     );
   }
 
-  Widget buildRecentEventsSection({
-    required bool isWebLayout,
-  }) {
+  Widget buildRecentEventsSection({required bool isWebLayout}) {
     return FutureBuilder<List<Event>>(
       future: eventsFuture,
       builder: (context, snapshot) {
@@ -517,9 +473,7 @@ class _BusinessScreenState extends State<BusinessScreen> {
           return const Card(
             child: Padding(
               padding: EdgeInsets.all(32),
-              child: Center(
-                child: CircularProgressIndicator(),
-              ),
+              child: Center(child: CircularProgressIndicator()),
             ),
           );
         }
@@ -557,17 +511,11 @@ class _BusinessScreenState extends State<BusinessScreen> {
         padding: const EdgeInsets.all(28),
         child: Column(
           children: [
-            const Icon(
-              Icons.event_busy_outlined,
-              size: 52,
-            ),
+            const Icon(Icons.event_busy_outlined, size: 52),
             const SizedBox(height: 14),
             const Text(
               'No events yet',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             const Text(
@@ -594,10 +542,7 @@ class _BusinessScreenState extends State<BusinessScreen> {
       children: [
         const Text(
           'Recent Events',
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
         ...recentEvents.map((event) {
@@ -646,24 +591,12 @@ class _BusinessScreenState extends State<BusinessScreen> {
                 dataRowMinHeight: 58,
                 dataRowMaxHeight: 70,
                 columns: const [
-                  DataColumn(
-                    label: Text('Event'),
-                  ),
-                  DataColumn(
-                    label: Text('Category'),
-                  ),
-                  DataColumn(
-                    label: Text('Date'),
-                  ),
-                  DataColumn(
-                    label: Text('Time'),
-                  ),
-                  DataColumn(
-                    label: Text('Location'),
-                  ),
-                  DataColumn(
-                    label: Text('Action'),
-                  ),
+                  DataColumn(label: Text('Event')),
+                  DataColumn(label: Text('Category')),
+                  DataColumn(label: Text('Date')),
+                  DataColumn(label: Text('Time')),
+                  DataColumn(label: Text('Location')),
+                  DataColumn(label: Text('Action')),
                 ],
                 rows: events.map((event) {
                   return DataRow(
@@ -675,9 +608,7 @@ class _BusinessScreenState extends State<BusinessScreen> {
                             event.title,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
                         ),
                       ),
@@ -726,19 +657,15 @@ class _BusinessScreenState extends State<BusinessScreen> {
           const Expanded(
             child: Text(
               'Recent Events',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
           ),
           Text(
             '$eventCount total',
             style: TextStyle(
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
-                  .withValues(alpha: 0.65),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.65),
             ),
           ),
           const SizedBox(width: 12),

@@ -20,21 +20,17 @@ class BusinessEventCard extends StatelessWidget {
 
       if (!context.mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Event deleted'),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Event deleted')));
 
       onDeleted();
     } catch (error) {
       if (!context.mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Could not delete event: $error'),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not delete event: $error')));
     }
   }
 
@@ -44,9 +40,7 @@ class BusinessEventCard extends StatelessWidget {
       builder: (dialogContext) {
         return AlertDialog(
           title: const Text('Delete event?'),
-          content: Text(
-            'Are you sure you want to delete "${event.title}"?',
-          ),
+          content: Text('Are you sure you want to delete "${event.title}"?'),
           actions: [
             TextButton(
               onPressed: () {
@@ -70,10 +64,7 @@ class BusinessEventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 8,
-      ),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: ListTile(
         leading: const Icon(Icons.event),
         title: Text(event.title),

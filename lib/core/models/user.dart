@@ -21,12 +21,7 @@ class AppUser {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'email': email,
-      'role': role,
-    };
+    return {'id': id, 'name': name, 'email': email, 'role': role};
   }
 
   bool get isBusinessOwner => role == 'business_owner';

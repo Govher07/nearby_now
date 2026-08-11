@@ -88,6 +88,7 @@ def normalize_ticketmaster_event(
         "state": state,
         "country": country,
         "zip_code": zip_code,
+        "external_url": url,
     }
 
 

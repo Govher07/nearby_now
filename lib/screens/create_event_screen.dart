@@ -9,10 +9,7 @@ import '../core/services/geocoding_service.dart';
 class CreateEventScreen extends StatefulWidget {
   final VoidCallback? onEventPosted;
 
-  const CreateEventScreen({
-    super.key,
-    this.onEventPosted,
-  });
+  const CreateEventScreen({super.key, this.onEventPosted});
 
   @override
   State<CreateEventScreen> createState() => _CreateEventScreenState();
@@ -95,9 +92,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         countryController.text.trim().isEmpty ||
         zipCodeController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please fill in all event details.'),
-        ),
+        const SnackBar(content: Text('Please fill in all event details.')),
       );
 
       return false;
@@ -105,9 +100,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
     if (selectedDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select an event date.'),
-        ),
+        const SnackBar(content: Text('Please select an event date.')),
       );
 
       return false;
@@ -115,9 +108,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
     if (timeController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter an event time.'),
-        ),
+        const SnackBar(content: Text('Please enter an event time.')),
       );
 
       return false;
@@ -146,7 +137,9 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     });
 
     try {
-      final geocodedLocation = await GeocodingService.geocodeAddress(fullAddress);
+      final geocodedLocation = await GeocodingService.geocodeAddress(
+        fullAddress,
+      );
 
       final Event newEvent = Event(
         id: '',
@@ -176,9 +169,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Event posted successfully.'),
-        ),
+        const SnackBar(content: Text('Event posted successfully.')),
       );
 
       widget.onEventPosted?.call();
@@ -296,10 +287,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         border: OutlineInputBorder(),
       ),
       items: categories.map((category) {
-        return DropdownMenuItem<String>(
-          value: category,
-          child: Text(category),
-        );
+        return DropdownMenuItem<String>(value: category, child: Text(category));
       }).toList(),
       onChanged: isPosting
           ? null
@@ -320,9 +308,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     final bool isWebLayout = MediaQuery.sizeOf(context).width >= 900;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Create Event'),
-      ),
+      appBar: AppBar(title: const Text('Create Event')),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -425,13 +411,9 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
                   Row(
                     children: [
-                      Expanded(
-                        child: buildDatePickerField(),
-                      ),
+                      Expanded(child: buildDatePickerField()),
                       const SizedBox(width: 12),
-                      Expanded(
-                        child: buildTimeTextField(),
-                      ),
+                      Expanded(child: buildTimeTextField()),
                     ],
                   ),
 
@@ -449,14 +431,10 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                           ? const SizedBox(
                               width: 18,
                               height: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                              ),
+                              child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Icon(Icons.add),
-                      label: Text(
-                        isPosting ? 'Posting...' : 'Create Event',
-                      ),
+                      label: Text(isPosting ? 'Posting...' : 'Create Event'),
                     ),
                   ),
                 ],

@@ -7,10 +7,7 @@ import '../screens/event_details_screen.dart';
 class EventCard extends StatelessWidget {
   final Event event;
 
-  const EventCard({
-    super.key,
-    required this.event,
-  });
+  const EventCard({super.key, required this.event});
 
   bool get isExternal {
     return event.source == 'ticketmaster';
@@ -55,10 +52,7 @@ class EventCard extends StatelessWidget {
       child: const Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.image_not_supported_outlined,
-            size: 36,
-          ),
+          Icon(Icons.image_not_supported_outlined, size: 36),
           SizedBox(height: 6),
           Text('Image not available'),
         ],
@@ -69,14 +63,9 @@ class EventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 10,
-      ),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: InkWell(
         onTap: () {
           Navigator.push(

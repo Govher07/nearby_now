@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../core/models/event.dart';
-import '../core/services/event_service.dart';
 import '../core/services/saved_event_service.dart';
 import '../widgets/event_card.dart';
-import '../core/models/saved_event.dart';
 
 class SavedScreen extends StatefulWidget {
   const SavedScreen({super.key});
@@ -23,26 +21,93 @@ class _SavedScreenState extends State<SavedScreen> {
   }
 
   Future<List<Event>> fetchSavedEventDetails() async {
-    final List<SavedEvent> savedRecords =
-        await SavedEventService.fetchSavedEvents();
-
-    final List<Event> allEvents = await EventService.fetchEvents();
-
-    final Set<String> savedEventIds = savedRecords
-        .map((savedEvent) => savedEvent.eventId)
-        .toSet();
-
-    final List<Event> savedEvents = allEvents.where((event) {
-      return savedEventIds.contains(event.id);
-    }).toList();
-
-    return savedEvents;
+    return SavedEventService.fetchSavedEvents();
   }
 
   void refreshSavedEvents() {
     setState(() {
       savedEventsFuture = fetchSavedEventDetails();
     });
+  }
+
+  DateTime? parseEventDate(String date) {
+    return DateTime.tryParse(date.trim());
+  }
+
+  bool isPastEvent(Event event) {
+    final DateTime? eventDate = parseEventDate(event.date);
+
+    if (eventDate == null) {
+      return false;
+    }
+
+    final DateTime now = DateTime.now();
+    final DateTime today = DateTime(now.year, now.month, now.day);
+
+    return eventDate.isBefore(today);
+  }
+
+  List<Widget> buildEventSection({
+    required String title,
+    required List<Event> events,
+    required bool useGrid,
+  }) {
+    return [
+      SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
+          child: Row(
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Chip(
+                label: Text('${events.length}'),
+                visualDensity: VisualDensity.compact,
+              ),
+            ],
+          ),
+        ),
+      ),
+      if (events.isEmpty)
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 4, 24, 20),
+            child: Text(
+              title == 'Upcoming Events'
+                  ? 'No upcoming saved events'
+                  : 'No past saved events',
+              style: TextStyle(color: Colors.grey.shade700),
+            ),
+          ),
+        )
+      else if (useGrid)
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          sliver: SliverGrid(
+            delegate: SliverChildBuilderDelegate((context, index) {
+              return EventCard(event: events[index]);
+            }, childCount: events.length),
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 420,
+              mainAxisExtent: 410,
+              crossAxisSpacing: 18,
+              mainAxisSpacing: 18,
+            ),
+          ),
+        )
+      else
+        SliverList(
+          delegate: SliverChildBuilderDelegate((context, index) {
+            return EventCard(event: events[index]);
+          }, childCount: events.length),
+        ),
+    ];
   }
 
   @override
@@ -53,6 +118,7 @@ class _SavedScreenState extends State<SavedScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
+            tooltip: 'Refresh saved events',
             onPressed: refreshSavedEvents,
           ),
         ],
@@ -61,9 +127,7 @@ class _SavedScreenState extends State<SavedScreen> {
         future: savedEventsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {
@@ -76,6 +140,31 @@ class _SavedScreenState extends State<SavedScreen> {
           }
 
           final List<Event> savedEvents = snapshot.data ?? [];
+          final List<Event> upcomingEvents =
+              savedEvents.where((event) => !isPastEvent(event)).toList()
+                ..sort((first, second) {
+                  final DateTime? firstDate = parseEventDate(first.date);
+                  final DateTime? secondDate = parseEventDate(second.date);
+
+                  if (firstDate == null || secondDate == null) {
+                    return 0;
+                  }
+
+                  return firstDate.compareTo(secondDate);
+                });
+
+          final List<Event> pastEvents = savedEvents.where(isPastEvent).toList()
+            ..sort((first, second) {
+              final DateTime? firstDate = parseEventDate(first.date);
+              final DateTime? secondDate = parseEventDate(second.date);
+
+              if (firstDate == null || secondDate == null) {
+                return 0;
+              }
+
+              // Most recently finished events first.
+              return secondDate.compareTo(firstDate);
+            });
 
           if (savedEvents.isEmpty) {
             return const Center(
@@ -86,10 +175,32 @@ class _SavedScreenState extends State<SavedScreen> {
             );
           }
 
-          return ListView.builder(
-            itemCount: savedEvents.length,
-            itemBuilder: (context, index) {
-              return EventCard(event: savedEvents[index]);
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final bool useGrid = constraints.maxWidth >= 700;
+
+              return RefreshIndicator(
+                onRefresh: () async {
+                  refreshSavedEvents();
+                  await savedEventsFuture;
+                },
+                child: CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    ...buildEventSection(
+                      title: 'Upcoming Events',
+                      events: upcomingEvents,
+                      useGrid: useGrid,
+                    ),
+                    ...buildEventSection(
+                      title: 'Past Events',
+                      events: pastEvents,
+                      useGrid: useGrid,
+                    ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 30)),
+                  ],
+                ),
+              );
             },
           );
         },

@@ -9,13 +9,20 @@ import '../data/current_user.dart';
 class AuthService {
   static const String baseUrl = ApiConfig.baseUrl;
 
-  static Future<AppUser> _readAuthResponse(http.Response response) async {
+  static Future<AppUser> _readAuthResponse(
+    http.Response response, {
+    required bool rememberMe,
+  }) async {
     final Map<String, dynamic> jsonData = jsonDecode(response.body);
+
     final String token = jsonData['access_token'] as String;
+
     final AppUser user = AppUser.fromJson(
       jsonData['user'] as Map<String, dynamic>,
     );
-    await CurrentUserStorage.saveAccessToken(token);
+
+    await CurrentUserStorage.saveAccessToken(token, persist: rememberMe);
+
     return user;
   }
 
@@ -29,9 +36,7 @@ class AuthService {
 
     final response = await http.post(
       url,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'name': name,
         'email': email,
@@ -44,30 +49,26 @@ class AuthService {
       throw Exception('Failed to register user');
     }
 
-    return _readAuthResponse(response);
+    return _readAuthResponse(response, rememberMe: true);
   }
 
   static Future<AppUser> login({
     required String email,
     required String password,
+    required bool rememberMe,
   }) async {
     final Uri url = Uri.parse('$baseUrl/login');
 
     final response = await http.post(
       url,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({
-        'email': email,
-        'password': password,
-      }),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'password': password}),
     );
 
     if (response.statusCode != 200) {
       throw Exception('Invalid email or password');
     }
 
-    return _readAuthResponse(response);
+    return _readAuthResponse(response, rememberMe: rememberMe);
   }
 }
