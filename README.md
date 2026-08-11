@@ -1,33 +1,49 @@
 # Nearby Now
 
-Nearby Now is a full-stack event discovery application that helps people find nearby activities and helps local businesses publish events and understand audience engagement.
+[![CI](https://github.com/Govher07/nearby_now/actions/workflows/ci.yml/badge.svg)](https://github.com/Govher07/nearby_now/actions/workflows/ci.yml)
 
-<img
-  src="docs/screenshots/01-mode-selection.png"
-  alt="Nearby Now mode selection screen"
-  width="100%"
-/>
+Nearby Now is a full-stack event discovery application that helps users find nearby activities and gives local businesses tools to publish events and understand audience engagement.
 
-The Flutter client combines community-created events with Ticketmaster listings, calculates distance from the user's location, displays events on a map, and supports saved events and reviews. Business accounts can create and manage events and view basic analytics such as views and saves.
+The Flutter client combines community-created events with Ticketmaster listings, calculates distance from the user’s location, displays events on an interactive map, and supports saved events and community reviews. Business owners can create and manage events while tracking views and saves.
 
-> This project is under active development. Authentication and deployment improvements are in progress; see [Current limitations](#current-limitations).
+![Nearby Now mode selection](docs/screenshots/01-mode-selection.png)
 
 ## Features
 
 ### Event seekers
 
-- Discover internal and Ticketmaster events
+- Discover community-created and Ticketmaster events
+- Hide outdated events from public discovery
+- Order events from nearest to farthest
 - Filter events by category and date
 - Calculate distance using the device location
-- Explore events on a map
-- Save events and leave ratings and reviews
+- Explore event locations on an interactive map
+- Save Nearby Now and Ticketmaster events
+- Organize saved events into upcoming and past sections
+- Leave ratings and reviews on Nearby Now community events
 - Open directions to an event
+- Stay signed in with an optional Remember Me setting
+- Use browser-managed password autofill
 
 ### Business owners
 
 - Create, edit, and delete events
 - Manage published events
-- View event and account-level view/save analytics
+- View event and account-level analytics
+- Track event views and saves
+- Review customer feedback
+- Protect event-management actions with role-based authorization
+
+### Engineering
+
+- JWT authentication and role-based authorization
+- Password hashing
+- Environment-based backend and Flutter configuration
+- Modular FastAPI routers and service layers
+- SQLAlchemy database models and constraints
+- Backend authentication and API tests
+- Flutter unit tests and static analysis
+- Automated GitHub Actions continuous integration
 
 ## Screenshots
 
@@ -35,53 +51,90 @@ The Flutter client combines community-created events with Ticketmaster listings,
 
 Upcoming events from Nearby Now and Ticketmaster are combined and ordered by distance.
 
-<img
-  src="docs/screenshots/02-event-discovery.png"
-  alt="Nearby Now event discovery"
-  width="100%"
-/>
+![Discover nearby events](docs/screenshots/02-event-discovery.png)
 
 ### Save local and Ticketmaster events
 
-Saved events remain available and are organized into upcoming and past sections.
+Users can save events from either source. Saved events are organized into upcoming and past sections.
 
-<img
-  src="docs/screenshots/03-saved-events.png"
-  alt="Upcoming and past saved events"
-  width="100%"
-/>
+![Saved events](docs/screenshots/03-saved-events.png)
 
 ### Manage business events
 
 Business owners can view event information, edit details, delete events, and monitor reviews.
 
-<img
-  src="docs/screenshots/04-business-event-details.png"
-  alt="Business owner event details"
-  width="100%"
-/>
+![Business event details](docs/screenshots/04-business-event-details.png)
 
 ## Technology
 
 | Layer | Technology |
-|---|---|
+| --- | --- |
 | Client | Flutter and Dart |
 | API | FastAPI and Python |
 | Database | MySQL, SQLAlchemy, and PyMySQL |
-| Maps/location | flutter_map, Google Maps, Geolocator, OpenStreetMap Nominatim |
+| Authentication | JWT and password hashing |
+| Maps and location | `flutter_map`, Geolocator, OpenStreetMap, and Nominatim |
+| Directions | Google Maps directions links |
 | External events | Ticketmaster Discovery API |
-| Testing | flutter_test, pytest, FastAPI TestClient |
+| Backend testing | pytest and FastAPI TestClient |
+| Flutter testing | `flutter_test` and `flutter analyze` |
+| Continuous integration | GitHub Actions |
 
 ## Architecture
 
 ```text
 Flutter client
-   |-- REST requests --> FastAPI
-   |                       |-- SQLAlchemy --> MySQL
-   |                       |-- Ticketmaster Discovery API
-   |                       `-- OpenStreetMap Nominatim
+   |
+   |-- REST requests ----------------------> FastAPI
+   |                                          |
+   |                                          |-- SQLAlchemy --> MySQL
+   |                                          |
+   |                                          |-- Ticketmaster Discovery API
+   |                                          |
+   |                                          `-- OpenStreetMap Nominatim
+   |
    `-- Device location and map rendering
 ```
+
+The backend is organized into focused modules:
+
+- Routers handle HTTP requests and responses.
+- Services handle Ticketmaster and geocoding integrations.
+- Dependencies handle authentication and authorization.
+- SQLAlchemy models handle persistent data.
+- Pydantic schemas validate API input and output.
+
+## Authentication and authorization
+
+Nearby Now uses JWT access tokens to authenticate API requests.
+
+Protected operations include:
+
+- Creating, editing, and deleting business events
+- Accessing business analytics
+- Saving and removing events
+- Creating reviews
+- Accessing user-specific resources
+
+The backend verifies ownership before allowing a business owner to modify an event. Client-provided user IDs are not trusted as proof of identity.
+
+Passwords are hashed before being stored. Plain-text passwords are never stored by Nearby Now. Browser password saving and autofill are handled by the user’s password manager.
+
+## Saved-event design
+
+Nearby Now supports saving events from two different sources:
+
+- Community events stored in the main `events` table
+- Ticketmaster events stored as external saved-event snapshots
+
+External events are not treated as business-created Nearby Now events. This keeps third-party data separate while allowing users to retain event details in their Saved Events screen.
+
+Saved events are grouped into:
+
+- Upcoming Events
+- Past Events
+
+Past saved events are retained so users can review their event history or remove events manually.
 
 ## Run locally
 
@@ -90,23 +143,53 @@ Flutter client
 - Flutter SDK compatible with Dart `^3.11.5`
 - Python 3.11 or newer
 - MySQL
-- Ticketmaster Discovery API key for external events
+- Ticketmaster Discovery API key
 
-### 1. Configure the backend
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/Govher07/nearby_now.git
+cd nearby_now
+```
+
+### 2. Configure the environment
+
+Copy the example environment file:
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` with your database credentials and Ticketmaster API key. Never commit the completed `.env` file.
+Edit `.env` with your local configuration:
 
-Create the database:
+```env
+DATABASE_URL=mysql+pymysql://YOUR_USER:YOUR_PASSWORD@localhost/nearby_now
+TICKETMASTER_API_KEY=YOUR_TICKETMASTER_KEY
+JWT_SECRET_KEY=YOUR_LONG_RANDOM_SECRET
+ALLOWED_ORIGINS=http://localhost:8080,http://127.0.0.1:8080
+```
+
+Generate a JWT secret:
+
+```bash
+openssl rand -hex 32
+```
+
+Never commit the completed `.env` file.
+
+### 3. Create the database
+
+Open MySQL and run:
 
 ```sql
 CREATE DATABASE nearby_now;
 ```
 
-Install and run the API:
+SQLAlchemy creates the application tables when the backend starts.
+
+Database migrations are not yet managed with Alembic.
+
+### 4. Install and run the backend
 
 ```bash
 cd backend
@@ -116,70 +199,127 @@ pip install -r requirements.txt
 uvicorn main:app --reload
 ```
 
-The API is available at `http://127.0.0.1:8000`. Interactive API documentation is at `http://127.0.0.1:8000/docs`.
+The API is available at:
 
-### 2. Run Flutter
+```text
+http://127.0.0.1:8000
+```
+
+Interactive API documentation is available at:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+### 5. Run Flutter Web
+
+Open another terminal from the repository root:
+
+```bash
+flutter pub get
+flutter run -d chrome --web-port=8080
+```
+
+The fixed port matches the backend’s local CORS configuration.
+
+The Flutter client defaults to:
+
+```text
+http://127.0.0.1:8000
+```
+
+To use a different backend address:
+
+```bash
+flutter run -d chrome \
+  --web-port=8080 \
+  --dart-define=API_BASE_URL=http://YOUR_BACKEND_ADDRESS:8000
+```
+
+For a physical device, use the computer’s local network address rather than `127.0.0.1`.
+
+## Testing
+
+### Flutter
 
 From the repository root:
 
 ```bash
-flutter pub get
-flutter run
-```
-
-The client defaults to `http://127.0.0.1:8000`. Override it for a physical device or deployed API:
-
-```bash
-flutter run --dart-define=API_BASE_URL=http://YOUR_COMPUTER_IP:8000
-```
-
-## Tests
-
-Run the Flutter tests and analyzer:
-
-```bash
-flutter test
+dart format --output=none --set-exit-if-changed lib test
 flutter analyze
+flutter test
 ```
 
-Run the backend tests from `backend/` with the virtual environment active:
+### Backend
+
+From the `backend` directory with the virtual environment active:
 
 ```bash
-pytest
+python -m pytest
 ```
+
+### Continuous integration
+
+GitHub Actions automatically runs the backend and Flutter checks for pushes and pull requests.
+
+The CI workflow verifies:
+
+- Python dependency installation
+- Backend tests and coverage
+- Flutter dependency installation
+- Flutter static analysis
+- Flutter tests
 
 ## Project structure
 
 ```text
 lib/
-  core/       Models, constants, storage, and API services
-  screens/    User and business screens
-  widgets/    Reusable Flutter widgets
+  core/
+    config/          Environment-based Flutter configuration
+    data/            Current-user and token storage
+    models/          Flutter data models
+    services/        API and location services
+    util/            Shared utility functions
+  screens/           Event-seeker, authentication, and business screens
+  widgets/           Reusable Flutter UI components
+
 backend/
-  database/   SQLAlchemy configuration and models
-  tests/      API and data-quality tests
-  main.py     FastAPI application and routes
-assets/       Local event/category imagery
-test/         Flutter unit tests
+  database/          SQLAlchemy configuration and database models
+  routers/           Authentication, event, review, and saved-event routes
+  services/          Ticketmaster and geocoding integrations
+  tests/             Authentication and API tests
+  dependencies.py    Authentication and authorization dependencies
+  main.py            FastAPI application configuration
+  schemas.py         Pydantic request and response schemas
+  security.py        Password hashing and JWT utilities
+
+docs/
+  screenshots/       Portfolio screenshots
+
+assets/
+  images/            Local event and category images
+
+test/                 Flutter unit tests
 ```
 
 ## Current limitations
 
-- The API is currently designed for local development and is not deployed.
-- Access tokens are currently stored with `shared_preferences`; secure mobile storage is planned before release.
-- The backend routes are being separated into smaller router and service modules.
-- Database migrations are not yet configured.
-- Screenshots and a hosted demo will be added after the security work is complete.
+- The backend currently runs locally and is not publicly deployed.
+- Database schema migrations are not yet managed with Alembic.
+- Flutter Web does not yet use URL-based deep linking for every screen, so refreshing a nested page may return to the main navigation screen.
+- Access tokens use `shared_preferences`; secure mobile storage is recommended before a production mobile release.
+- Ticketmaster events cannot receive Nearby Now reviews because reviews are limited to community-created events.
 
 ## Roadmap
 
-- Refresh tokens and secure mobile token storage
-- Environment-based Flutter API configuration
-- Alembic database migrations
-- Integration and authorization tests
-- Automated checks with GitHub Actions
-- Hosted demo and production deployment
+- Add Alembic database migrations
+- Add URL-based routing and deep links for Flutter Web
+- Add refresh-token support
+- Use secure token storage for production mobile releases
+- Expand integration and authorization tests
+- Deploy the API
+- Publish a hosted demo
 
 ## Author
 
-Built by [Govher07](https://github.com/Govher07) as a full-stack portfolio project focused on mobile development, API design, location-based discovery, third-party integrations, and relational data modeling.
+Built by [Govher07](https://github.com/Govher07) as a full-stack portfolio project focused on Flutter development, API design, location-based discovery, authentication, third-party integrations, automated testing, and relational data modeling.
